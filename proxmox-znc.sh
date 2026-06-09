@@ -178,6 +178,35 @@ pick_next_ctid() {
   die "pvesh is required to auto-select a container ID; pass --ctid instead"
 }
 
+detect_nameservers() {
+  local servers=()
+  local line ns
+
+  if [[ -r /etc/resolv.conf ]]; then
+    while read -r line; do
+      case "$line" in
+        nameserver[[:space:]]*)
+          ns="${line#nameserver }"
+          ns="${ns%% *}"
+          [[ -n "$ns" ]] || continue
+          case "$ns" in
+            127.*|::1)
+              continue
+              ;;
+          esac
+          servers+=("$ns")
+          ;;
+      esac
+    done </etc/resolv.conf
+  fi
+
+  if [[ "${#servers[@]}" -eq 0 ]]; then
+    servers=(1.1.1.1 8.8.8.8)
+  fi
+
+  printf '%s' "${servers[*]}"
+}
+
 download_alpine_template() {
   local template_storage="$1"
   local template_arch="$2"
@@ -213,6 +242,7 @@ create_container() {
   local swap="$7"
   local disk="$8"
   local cores="$9"
+  local nameservers="${10}"
 
   log "creating container $ctid ($hostname)"
   pct create "$ctid" "$template_ref" \
@@ -224,6 +254,7 @@ create_container() {
     --swap "$swap" \
     --rootfs "${storage}:${disk}" \
     --net0 "name=eth0,bridge=${bridge},ip=dhcp" \
+    --nameserver "$nameservers" \
     --onboot 1
 }
 
@@ -438,12 +469,14 @@ main() {
   local irc_network="${IRC_NETWORK:-libera}"
   local web_port="${WEB_PORT:-6697}"
   local auth_mode="${AUTH_MODE:-}"
+  local nameservers
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
     ctid="auto"
   else
     ctid="$(pick_next_ctid)"
   fi
+  nameservers="$(detect_nameservers)"
 
   prompt_default hostname "Container hostname" "$hostname"
   prompt_default storage "Root disk storage" "$storage"
@@ -472,6 +505,7 @@ main() {
     printf '  Storage: %s\n' "$storage"
     printf '  Template storage: %s\n' "$template_storage"
     printf '  Bridge: %s\n' "$bridge"
+    printf '  Nameservers: %s\n' "$nameservers"
     printf '  Memory: %s MB\n' "$memory"
     printf '  Swap: %s MB\n' "$swap"
     printf '  Disk: %s GB\n' "$disk"
@@ -494,7 +528,7 @@ main() {
   template_arch="$(map_arch "$arch")"
   template_ref="$(download_alpine_template "$template_storage" "$template_arch")"
 
-  create_container "$ctid" "$hostname" "$storage" "$template_ref" "$bridge" "$memory" "$swap" "$disk" "$cores"
+  create_container "$ctid" "$hostname" "$storage" "$template_ref" "$bridge" "$memory" "$swap" "$disk" "$cores" "$nameservers"
   run_or_echo pct start "$ctid"
   bootstrap_container "$ctid"
 
