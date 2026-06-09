@@ -57,6 +57,12 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
 }
 
+prompt_fd=0
+if [[ -r /dev/tty && -w /dev/tty ]]; then
+  exec 3</dev/tty 4>/dev/tty
+  prompt_fd=3
+fi
+
 prompt_default() {
   local var_name="$1"
   local prompt="$2"
@@ -68,7 +74,11 @@ prompt_default() {
     return
   fi
 
-  read -r -p "$prompt [$default_value]: " value
+  if [[ "$prompt_fd" -ne 0 ]]; then
+    read -r -u "$prompt_fd" -p "$prompt [$default_value]: " value
+  else
+    read -r -p "$prompt [$default_value]: " value
+  fi
   if [[ -z "$value" ]]; then
     value="$default_value"
   fi
@@ -96,9 +106,20 @@ prompt_secret() {
     return
   fi
 
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    printf -v "$var_name" '%s' '<not-set>'
+    return
+  fi
+
+  [[ "$prompt_fd" -ne 0 ]] || die "password required but no interactive terminal is available; set PASSWORD or avoid --dry-run"
+
   while true; do
-    read -r -s -p "$prompt: " value
-    printf '\n'
+    read -r -u "$prompt_fd" -s -p "$prompt: " value
+    if [[ "$prompt_fd" -ne 0 ]]; then
+      printf '\n' >&4
+    else
+      printf '\n'
+    fi
     [[ -n "$value" ]] || continue
     printf -v "$var_name" '%s' "$value"
     return
