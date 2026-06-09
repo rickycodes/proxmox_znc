@@ -269,6 +269,12 @@ bootstrap_container() {
 set -eu
 
 apk add --no-cache ca-certificates znc znc-openrc >/dev/null
+if [ -n "${NAMESERVERS:-}" ]; then
+  : > /etc/resolv.conf
+  for ns in $NAMESERVERS; do
+    printf 'nameserver %s\n' "$ns" >> /etc/resolv.conf
+  done
+fi
 
 if ! id znc >/dev/null 2>&1; then
   adduser -D -h /var/lib/znc -s /sbin/nologin znc
@@ -458,6 +464,7 @@ EOF
   pct exec "$ctid" -- env \
     LISTENER_PORT="$listener_port" \
     WEB_PORT="$web_port" \
+    NAMESERVERS="$nameservers" \
     ZNC_USER="$znc_user" \
     ZNC_PASSWORD="$znc_password" \
     IRC_NICK="$irc_nick" \
