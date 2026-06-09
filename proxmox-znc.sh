@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_NAME="$(basename "$0")"
 
 log() {
-  printf '[%s] %s\n' "$SCRIPT_NAME" "$*"
+  printf '[%s] %s\n' "$SCRIPT_NAME" "$*" >&2
 }
 
 die() {
