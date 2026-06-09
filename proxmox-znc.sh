@@ -275,7 +275,32 @@ if [ -n "${NAMESERVERS:-}" ]; then
   done
 fi
 
-apk add --no-cache ca-certificates znc znc-openrc >/dev/null
+wait_for_network() {
+  i=0
+  while [ "$i" -lt 12 ]; do
+    if ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
+      return 0
+    fi
+    i=$((i + 1))
+    sleep 2
+  done
+  return 1
+}
+
+wait_for_network || true
+
+i=0
+while :; do
+  if apk add --no-cache ca-certificates znc znc-openrc >/dev/null 2>&1; then
+    break
+  fi
+  i=$((i + 1))
+  if [ "$i" -ge 5 ]; then
+    apk add --no-cache ca-certificates znc znc-openrc
+    exit 1
+  fi
+  sleep 4
+done
 
 if ! id znc >/dev/null 2>&1; then
   adduser -D -h /var/lib/znc -s /sbin/nologin znc
