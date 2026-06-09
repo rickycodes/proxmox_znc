@@ -338,16 +338,16 @@ rc-service znc start >/dev/null
 EOF
 
   pct exec "$ctid" -- env \
-    WEB_PORT="$WEB_PORT" \
-    ZNC_USER="$ZNC_USER" \
-    ZNC_PASSWORD="$ZNC_PASSWORD" \
-    IRC_NICK="$IRC_NICK" \
-    IRC_ALT_NICK="$IRC_ALT_NICK" \
-    IRC_REALNAME="$IRC_REALNAME" \
-    IRC_NETWORK="$IRC_NETWORK" \
-    IRC_SERVER="$IRC_SERVER" \
-    IRC_PORT="$IRC_PORT" \
-    AUTH_MODE="$AUTH_MODE" \
+    WEB_PORT="$web_port" \
+    ZNC_USER="$znc_user" \
+    ZNC_PASSWORD="$znc_password" \
+    IRC_NICK="$irc_nick" \
+    IRC_ALT_NICK="$irc_alt_nick" \
+    IRC_REALNAME="$irc_realname" \
+    IRC_NETWORK="$irc_network" \
+    IRC_SERVER="$irc_server" \
+    IRC_PORT="$irc_port" \
+    AUTH_MODE="$auth_mode" \
     /bin/sh -s <"$bootstrap"
 
   rm -f "$bootstrap"
