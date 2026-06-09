@@ -268,13 +268,14 @@ bootstrap_container() {
 #!/bin/sh
 set -eu
 
-apk add --no-cache ca-certificates znc znc-openrc >/dev/null
 if [ -n "${NAMESERVERS:-}" ]; then
   : > /etc/resolv.conf
   for ns in $NAMESERVERS; do
     printf 'nameserver %s\n' "$ns" >> /etc/resolv.conf
   done
 fi
+
+apk add --no-cache ca-certificates znc znc-openrc >/dev/null
 
 if ! id znc >/dev/null 2>&1; then
   adduser -D -h /var/lib/znc -s /sbin/nologin znc
