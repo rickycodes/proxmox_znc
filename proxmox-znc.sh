@@ -184,7 +184,7 @@ download_alpine_template() {
   local template_name=""
 
   log "refreshing Alpine template list"
-  pveam update >/dev/null
+  pveam update >/dev/null 2>&1
 
   template_name="$(
     pveam available \
@@ -197,7 +197,7 @@ download_alpine_template() {
 
   if ! pveam list "$template_storage" 2>/dev/null | awk '{ print $1 }' | grep -qx "$template_name"; then
     log "downloading template $template_name to storage $template_storage"
-    pveam download "$template_storage" "$template_name"
+    pveam download "$template_storage" "$template_name" >/dev/null 2>&1
   fi
 
   printf '%s:vztmpl/%s' "$template_storage" "$template_name"
