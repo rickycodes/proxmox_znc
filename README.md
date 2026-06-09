@@ -31,6 +31,12 @@ chmod +x proxmox-znc.sh
 ./proxmox-znc.sh
 ```
 
+Dry-run it from a fetched copy:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/main/proxmox-znc.sh | bash -s -- --dry-run
+```
+
 Or pass overrides:
 
 ```bash
@@ -57,6 +63,7 @@ Or pass overrides:
 - `--bridge`: Proxmox bridge
 - `--storage`: container root disk storage
 - `--memory`, `--swap`, `--disk`, `--cores`: container sizing
+- `--dry-run`: print the planned container and ZNC settings, then exit
 
 ## After Install
 

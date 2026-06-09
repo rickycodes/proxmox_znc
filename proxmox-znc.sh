@@ -29,6 +29,7 @@ Defaults:
   Container cores:  1
 
 Options:
+  --dry-run             Show what would be done and exit
   --hostname NAME       Container hostname
   --storage NAME        Root disk storage for the container
   --template-storage N  Storage used for the Alpine template download
@@ -72,6 +73,17 @@ prompt_default() {
     value="$default_value"
   fi
   printf -v "$var_name" '%s' "$value"
+}
+
+run_or_echo() {
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    printf '+'
+    printf ' %q' "$@"
+    printf '\n'
+    return 0
+  fi
+
+  "$@"
 }
 
 prompt_secret() {
@@ -260,6 +272,8 @@ main() {
         usage
         exit 0
         ;;
+      --dry-run)
+        DRY_RUN=1; shift ;;
       --hostname)
         CT_HOSTNAME="${2:-}"; shift 2 ;;
       --storage)
@@ -304,14 +318,16 @@ main() {
     esac
   done
 
-  require_cmd pct
-  require_cmd pveam
-  require_cmd awk
-  require_cmd sort
-  require_cmd grep
-  require_cmd mktemp
+  if [[ "${DRY_RUN:-0}" -ne 1 ]]; then
+    require_cmd pct
+    require_cmd pveam
+    require_cmd awk
+    require_cmd sort
+    require_cmd grep
+    require_cmd mktemp
 
-  [[ $EUID -eq 0 ]] || die "run this on the Proxmox host as root"
+    [[ $EUID -eq 0 ]] || die "run this on the Proxmox host as root"
+  fi
 
   local ctid
   local hostname="${CT_HOSTNAME:-znc}"
@@ -332,7 +348,11 @@ main() {
   local irc_network="${IRC_NETWORK:-libera}"
   local web_port="${WEB_PORT:-6697}"
 
-  ctid="$(pick_next_ctid)"
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    ctid="auto"
+  else
+    ctid="$(pick_next_ctid)"
+  fi
 
   prompt_default hostname "Container hostname" "$hostname"
   prompt_default storage "Root disk storage" "$storage"
@@ -352,13 +372,37 @@ main() {
   prompt_default web_port "ZNC listener port" "$web_port"
   prompt_secret znc_password "ZNC password"
 
+  if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
+    log "dry run"
+    printf 'Would create Alpine LXC with:\n'
+    printf '  CTID: %s\n' "$ctid"
+    printf '  Hostname: %s\n' "$hostname"
+    printf '  Storage: %s\n' "$storage"
+    printf '  Template storage: %s\n' "$template_storage"
+    printf '  Bridge: %s\n' "$bridge"
+    printf '  Memory: %s MB\n' "$memory"
+    printf '  Swap: %s MB\n' "$swap"
+    printf '  Disk: %s GB\n' "$disk"
+    printf '  Cores: %s\n' "$cores"
+    printf 'Would configure ZNC with:\n'
+    printf '  ZNC user: %s\n' "$znc_user"
+    printf '  IRC nick: %s\n' "$irc_nick"
+    printf '  Alt nick: %s\n' "$irc_alt_nick"
+    printf '  Real name: %s\n' "$irc_realname"
+    printf '  IRC network: %s\n' "$irc_network"
+    printf '  IRC server: %s:%s\n' "$irc_server" "$irc_port"
+    printf '  ZNC listener port: %s\n' "$web_port"
+    printf 'No changes made.\n'
+    exit 0
+  fi
+
   local arch template_arch template_ref
   arch="$(uname -m)"
   template_arch="$(map_arch "$arch")"
   template_ref="$(download_alpine_template "$template_storage" "$template_arch")"
 
   create_container "$ctid" "$hostname" "$storage" "$template_ref" "$bridge" "$memory" "$swap" "$disk" "$cores"
-  pct start "$ctid"
+  run_or_echo pct start "$ctid"
   bootstrap_container "$ctid"
 
   local container_ip
