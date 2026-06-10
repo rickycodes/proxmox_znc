@@ -378,7 +378,7 @@ normalize_user_modules() {
       next
     }
 
-    in_user && /^LoadModule = (watch|chansaver|controlpanel|sasl|nickserv)$/ {
+    in_user && /^[[:space:]]*LoadModule = (watch|chansaver|controlpanel|sasl|nickserv)[[:space:]]*$/ {
       next
     }
 
