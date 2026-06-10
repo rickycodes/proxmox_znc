@@ -48,7 +48,6 @@ Options:
   --irc-network NAME    ZNC IRC network name
   --listener-port PORT  ZNC IRC listener port inside the container
   --web-port PORT       ZNC webadmin port inside the container
-  --auth-mode MODE      IRC auth mode: none, sasl, nickserv
   --help                Show this help
 
 Environment variables with the same names are also honored.
@@ -125,36 +124,6 @@ prompt_secret() {
     [[ -n "$value" ]] || continue
     printf -v "$var_name" '%s' "$value"
     return
-  done
-}
-
-prompt_choice() {
-  local var_name="$1"
-  local prompt="$2"
-  local default_value="$3"
-  local value="${!var_name:-}"
-
-  if [[ -n "$value" ]]; then
-    printf -v "$var_name" '%s' "$value"
-    return
-  fi
-
-  while true; do
-    if [[ "$prompt_fd" -ne 0 ]]; then
-      read -r -u "$prompt_fd" -p "$prompt [$default_value]: " value
-    else
-      read -r -p "$prompt [$default_value]: " value
-    fi
-    [[ -n "$value" ]] || value="$default_value"
-    case "$value" in
-      none|sasl|nickserv)
-        printf -v "$var_name" '%s' "$value"
-        return
-        ;;
-      *)
-        printf 'Please enter one of: none, sasl, nickserv\n' >&2
-        ;;
-    esac
   done
 }
 
@@ -343,57 +312,6 @@ su -s /bin/sh znc -c "HOME=/var/lib/znc znc --datadir=/var/lib/znc --makeconf" <
 }
 
 config="/var/lib/znc/configs/znc.conf"
-
-normalize_user_modules() {
-  local tmp_config
-  tmp_config="$(mktemp)"
-
-  awk -v auth_mode="$AUTH_MODE" '
-    function emit(module) {
-      if (module != "" && !(module in seen)) {
-        print "LoadModule = " module
-        seen[module] = 1
-      }
-    }
-
-    BEGIN {
-      in_user = 0
-      user_seen = 0
-    }
-
-    /^<User / {
-      in_user = 1
-      print
-      if (!user_seen) {
-        emit("watch")
-        emit("chansaver")
-        emit("controlpanel")
-        if (auth_mode == "sasl") {
-          emit("sasl")
-        } else if (auth_mode == "nickserv") {
-          emit("nickserv")
-        }
-        user_seen = 1
-      }
-      next
-    }
-
-    in_user && /^[[:space:]]*LoadModule = (watch|chansaver|controlpanel|sasl|nickserv)[[:space:]]*$/ {
-      next
-    }
-
-    in_user && /^<\/User>/ {
-      in_user = 0
-    }
-
-    { print }
-  ' "$config" >"$tmp_config"
-
-  mv "$tmp_config" "$config"
-}
-
-normalize_user_modules
-
 normalize_listeners() {
   local tmp_config
   tmp_config="$(mktemp)"
@@ -501,7 +419,6 @@ EOF
     IRC_NETWORK="$irc_network" \
     IRC_SERVER="$irc_server" \
     IRC_PORT="$irc_port" \
-    AUTH_MODE="$auth_mode" \
     /bin/sh -s <"$bootstrap"
 
   rm -f "$bootstrap"
@@ -552,8 +469,6 @@ main() {
         LISTENER_PORT="${2:-}"; shift 2 ;;
       --web-port)
         WEB_PORT="${2:-}"; shift 2 ;;
-      --auth-mode)
-        AUTH_MODE="${2:-}"; shift 2 ;;
       --)
         shift
         break
@@ -594,7 +509,6 @@ main() {
   local irc_network="${IRC_NETWORK:-libera}"
   local listener_port="${LISTENER_PORT:-6697}"
   local web_port="${WEB_PORT:-6698}"
-  local auth_mode="${AUTH_MODE:-}"
   local nameservers
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
@@ -621,7 +535,6 @@ main() {
   prompt_default irc_network "IRC network name" "$irc_network"
   prompt_default listener_port "ZNC IRC listener port" "$listener_port"
   prompt_default web_port "ZNC webadmin port" "$web_port"
-  prompt_choice auth_mode "IRC auth mode (none, sasl, nickserv)" "${auth_mode:-none}"
   prompt_secret znc_password "ZNC password"
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
@@ -646,7 +559,6 @@ main() {
     printf '  IRC server: %s:%s\n' "$irc_server" "$irc_port"
     printf '  IRC listener port: %s\n' "$listener_port"
     printf '  Webadmin port: %s\n' "$web_port"
-    printf '  IRC auth mode: %s\n' "$auth_mode"
     printf 'No changes made.\n'
     exit 0
   fi

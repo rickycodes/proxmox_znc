@@ -21,7 +21,6 @@ A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a 
 - Creates a small unprivileged container.
 - Installs `znc`, `znc-openrc`, and `ca-certificates`.
 - Generates a basic ZNC config wired to Libera by default.
-- Loads `watch`, `chansaver`, and `controlpanel` by default.
 - Starts the service and enables it on boot.
 
 ## Usage
@@ -64,7 +63,6 @@ Or pass overrides:
 - `--irc-network`: network name used in the ZNC login string
 - `--listener-port`: IRC client listener port inside the container
 - `--web-port`: web admin listener port inside the container
-- `--auth-mode`: choose `none`, `sasl`, or `nickserv`
 - `--bridge`: Proxmox bridge
 - `--storage`: container root disk storage
 - `--memory`, `--swap`, `--disk`, `--cores`: container sizing
@@ -76,6 +74,5 @@ Or pass overrides:
 - Web admin: `https://<container-ip>:6698/`
 - IRC client login format: `<znc-user>/<network>:<password>`
 - Default IRC server inside ZNC: `irc.libera.chat:6697`
-- Default user modules: `watch`, `chansaver`, `controlpanel`
 
 If you want to change channels, modules, or buffers later, use the ZNC web admin UI.
