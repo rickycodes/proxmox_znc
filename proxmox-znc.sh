@@ -399,12 +399,21 @@ normalize_listeners() {
   tmp_config="$(mktemp)"
 
   awk -v irc_port="$LISTENER_PORT" -v web_port="$WEB_PORT" '
+    function emit_irc_listener() {
+      print "<Listener l>"
+      print "\tAllowIRC = true"
+      print "\tAllowWeb = false"
+      print "\tPort = " irc_port
+      print "\tSSL = true"
+      print "</Listener>"
+    }
+
     function emit_web_listener() {
       if (web_port != "" && web_port != irc_port) {
         print "<Listener webadmin>"
+        print "\tAllowIRC = false"
+        print "\tAllowWeb = true"
         print "\tPort = " web_port
-        print "\tIPv4 = true"
-        print "\tIPv6 = true"
         print "\tSSL = true"
         print "</Listener>"
       }
@@ -412,48 +421,41 @@ normalize_listeners() {
 
     BEGIN {
       in_listener = 0
-      listener_done = 0
-      web_done = 0
+      listener_replaced = 0
+      web_emitted = 0
     }
 
-    /^<Listener / && listener_done == 0 {
-      in_listener = 1
-      print
-      print "\tPort = " irc_port
-      print "\tIPv4 = true"
-      print "\tIPv6 = true"
-      print "\tSSL = true"
-      listener_done = 1
+    /^<Listener / {
+      if (!listener_replaced) {
+        emit_irc_listener()
+        listener_replaced = 1
+        in_listener = 1
+      } else {
+        in_listener = 1
+      }
       next
     }
 
-    in_listener && /^Port = / { next }
-    in_listener && /^IPv4 = / { next }
-    in_listener && /^IPv6 = / { next }
-    in_listener && /^SSL = / { next }
-
     in_listener && /^<\/Listener>/ {
-      print
-      if (web_done == 0) {
+      if (!web_emitted) {
         emit_web_listener()
-        web_done = 1
+        web_emitted = 1
       }
       in_listener = 0
+      next
+    }
+
+    in_listener {
       next
     }
 
     { print }
 
     END {
-      if (listener_done == 0) {
-        print "<Listener l>"
-        print "\tPort = " irc_port
-        print "\tIPv4 = true"
-        print "\tIPv6 = true"
-        print "\tSSL = true"
-        print "</Listener>"
+      if (!listener_replaced) {
+        emit_irc_listener()
       }
-      if (web_done == 0) {
+      if (!web_emitted) {
         emit_web_listener()
       }
     }
