@@ -18,7 +18,7 @@ A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a 
 - Downloads the latest Alpine LXC template for the host architecture.
 - Creates a small unprivileged container.
 - Installs `znc`, `znc-openrc`, and `ca-certificates`.
-- Generates a basic ZNC config wired to Libera by default.
+- Generates a basic ZNC config wired to Libera by default via `znc --makeconf`.
 - Starts the service and enables it on boot.
 
 ## Usage
@@ -69,4 +69,4 @@ Or pass overrides:
 - IRC client login format: `<znc-user>/<network>:<password>`
 - Default IRC server inside ZNC: `irc.libera.chat:6697`
 
-If you want to change channels, modules, or buffers later, use the ZNC config or web admin UI after setup.
+The script leaves ZNC’s generated config mostly alone. If you want to tune modules, listeners, or auth later, do that in ZNC itself after install.

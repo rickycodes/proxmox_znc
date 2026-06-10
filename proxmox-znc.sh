@@ -282,7 +282,7 @@ trap 'rm -f "$answers"' EXIT
 cat >"$answers" <<ANSWERS
 6697
 yes
-no
+yes
 
 $ZNC_USER
 $ZNC_PASSWORD
