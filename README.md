@@ -6,8 +6,6 @@ A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a 
 
 - IRC network: `irc.libera.chat`
 - IRC port: `6697`
-- ZNC IRC listener port: `6697`
-- ZNC webadmin port: `6698`
 - ZNC network name: `libera`
 - Container bridge: `vmbr0`
 - Container RAM: `256 MB`
@@ -61,8 +59,6 @@ Or pass overrides:
 - `--irc-server`: IRC server hostname
 - `--irc-port`: IRC server port
 - `--irc-network`: network name used in the ZNC login string
-- `--listener-port`: IRC client listener port inside the container
-- `--web-port`: web admin listener port inside the container
 - `--bridge`: Proxmox bridge
 - `--storage`: container root disk storage
 - `--memory`, `--swap`, `--disk`, `--cores`: container sizing
@@ -70,9 +66,7 @@ Or pass overrides:
 
 ## After Install
 
-- IRC listener: `ssl://<container-ip>:6697`
-- Web admin: `https://<container-ip>:6698/`
 - IRC client login format: `<znc-user>/<network>:<password>`
 - Default IRC server inside ZNC: `irc.libera.chat:6697`
 
-If you want to change channels, modules, or buffers later, use the ZNC web admin UI.
+If you want to change channels, modules, or buffers later, use the ZNC config or web admin UI after setup.

@@ -46,8 +46,6 @@ Options:
   --irc-server HOST     IRC server hostname
   --irc-port PORT       IRC server port
   --irc-network NAME    ZNC IRC network name
-  --listener-port PORT  ZNC IRC listener port inside the container
-  --web-port PORT       ZNC webadmin port inside the container
   --help                Show this help
 
 Environment variables with the same names are also honored.
@@ -282,7 +280,7 @@ answers="$(mktemp)"
 trap 'rm -f "$answers"' EXIT
 
 cat >"$answers" <<ANSWERS
-$LISTENER_PORT
+6697
 yes
 no
 
@@ -311,105 +309,12 @@ su -s /bin/sh znc -c "HOME=/var/lib/znc znc --datadir=/var/lib/znc --makeconf" <
   exit 1
 }
 
-config="/var/lib/znc/configs/znc.conf"
-normalize_listeners() {
-  local tmp_config
-  tmp_config="$(mktemp)"
-
-  awk -v irc_port="$LISTENER_PORT" -v web_port="$WEB_PORT" '
-    function emit_irc_listener() {
-      print "<Listener l>"
-      print "\tAllowIRC = true"
-      print "\tAllowWeb = false"
-      print "\tPort = " irc_port
-      print "\tSSL = true"
-      print "</Listener>"
-    }
-
-    function emit_web_listener() {
-      if (web_port != "" && web_port != irc_port) {
-        print "<Listener webadmin>"
-        print "\tAllowIRC = false"
-        print "\tAllowWeb = true"
-        print "\tPort = " web_port
-        print "\tSSL = true"
-        print "</Listener>"
-      }
-    }
-
-    BEGIN {
-      in_listener = 0
-      listener_replaced = 0
-      web_emitted = 0
-    }
-
-    /^<Listener / {
-      if (!listener_replaced) {
-        emit_irc_listener()
-        listener_replaced = 1
-        in_listener = 1
-      } else {
-        in_listener = 1
-      }
-      next
-    }
-
-    in_listener && /^<\/Listener>/ {
-      if (!web_emitted) {
-        emit_web_listener()
-        web_emitted = 1
-      }
-      in_listener = 0
-      next
-    }
-
-    in_listener {
-      next
-    }
-
-    { print }
-
-    END {
-      if (!listener_replaced) {
-        emit_irc_listener()
-      }
-      if (!web_emitted) {
-        emit_web_listener()
-      }
-    }
-  ' "$config" >"$tmp_config"
-
-  mv "$tmp_config" "$config"
-}
-
-normalize_listeners
-
-if ! grep -qx 'LoadModule = webadmin' "$config"; then
-  tmp_config="$(mktemp)"
-  awk '
-    BEGIN { inserted = 0 }
-    /^<Listener / && inserted == 0 {
-      print "LoadModule = webadmin"
-      inserted = 1
-    }
-    { print }
-    END {
-      if (inserted == 0) {
-        print "LoadModule = webadmin"
-      }
-    }
-  ' "$config" >"$tmp_config"
-  mv "$tmp_config" "$config"
-fi
-
 chown -R znc:znc /var/lib/znc
 rc-update add znc default >/dev/null
 rc-service znc start >/dev/null
 EOF
 
   pct exec "$ctid" -- env \
-    LISTENER_PORT="$listener_port" \
-    WEB_PORT="$web_port" \
     NAMESERVERS="$nameservers" \
     ZNC_USER="$znc_user" \
     ZNC_PASSWORD="$znc_password" \
@@ -465,10 +370,6 @@ main() {
         IRC_PORT="${2:-}"; shift 2 ;;
       --irc-network)
         IRC_NETWORK="${2:-}"; shift 2 ;;
-      --listener-port)
-        LISTENER_PORT="${2:-}"; shift 2 ;;
-      --web-port)
-        WEB_PORT="${2:-}"; shift 2 ;;
       --)
         shift
         break
@@ -507,8 +408,6 @@ main() {
   local irc_server="${IRC_SERVER:-irc.libera.chat}"
   local irc_port="${IRC_PORT:-6697}"
   local irc_network="${IRC_NETWORK:-libera}"
-  local listener_port="${LISTENER_PORT:-6697}"
-  local web_port="${WEB_PORT:-6698}"
   local nameservers
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
@@ -533,8 +432,6 @@ main() {
   prompt_default irc_server "IRC server" "$irc_server"
   prompt_default irc_port "IRC server port" "$irc_port"
   prompt_default irc_network "IRC network name" "$irc_network"
-  prompt_default listener_port "ZNC IRC listener port" "$listener_port"
-  prompt_default web_port "ZNC webadmin port" "$web_port"
   prompt_secret znc_password "ZNC password"
 
   if [[ "${DRY_RUN:-0}" -eq 1 ]]; then
@@ -557,8 +454,6 @@ main() {
     printf '  Real name: %s\n' "$irc_realname"
     printf '  IRC network: %s\n' "$irc_network"
     printf '  IRC server: %s:%s\n' "$irc_server" "$irc_port"
-    printf '  IRC listener port: %s\n' "$listener_port"
-    printf '  Webadmin port: %s\n' "$web_port"
     printf 'No changes made.\n'
     exit 0
   fi
@@ -581,8 +476,6 @@ main() {
   printf 'Hostname: %s\n' "$hostname"
   if [[ -n "$container_ip" ]]; then
     printf 'Container IP: %s\n' "$container_ip"
-    printf 'ZNC IRC listener: %s:%s (SSL)\n' "$container_ip" "$listener_port"
-    printf 'ZNC webadmin: https://%s:%s/\n' "$container_ip" "$web_port"
     printf 'IRC client login format: %s/%s:<password>\n' "$znc_user" "$irc_network"
   fi
   printf 'IRC server inside ZNC: %s:%s\n' "$irc_server" "$irc_port"
