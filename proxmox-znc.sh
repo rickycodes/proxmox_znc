@@ -382,7 +382,7 @@ normalize_user_modules() {
       next
     }
 
-    in_user && /^</ && $0 !~ /^<User / {
+    in_user && /^<\/User>/ {
       in_user = 0
     }
 
