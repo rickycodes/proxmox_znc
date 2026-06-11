@@ -279,28 +279,29 @@ install -d -o znc -g znc /var/lib/znc/configs
 answers="$(mktemp)"
 trap 'rm -f "$answers"' EXIT
 
-cat >"$answers" <<ANSWERS
-6697
-yes
-yes
-
-$ZNC_USER
-$ZNC_PASSWORD
-$ZNC_PASSWORD
-$IRC_NICK
-$IRC_ALT_NICK
-$ZNC_USER
-$IRC_REALNAME
-
-yes
-$IRC_NETWORK
-$IRC_SERVER
-yes
-$IRC_PORT
-
-
-no
-ANSWERS
+{
+  printf '%s\n' \
+    '6697' \
+    'yes' \
+    'yes' \
+    '' \
+    "$ZNC_USER" \
+    "$ZNC_PASSWORD" \
+    "$ZNC_PASSWORD" \
+    "$IRC_NICK" \
+    "$IRC_ALT_NICK" \
+    "$ZNC_USER" \
+    "$IRC_REALNAME" \
+    '' \
+    'yes' \
+    "$IRC_NETWORK" \
+    "$IRC_SERVER" \
+    'yes' \
+    "$IRC_PORT" \
+    '' \
+    '' \
+    'no'
+} >"$answers"
 
 chown znc:znc "$answers"
 
