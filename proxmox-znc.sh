@@ -74,9 +74,11 @@ prompt_default() {
   fi
 
   if [[ "$prompt_fd" -ne 0 ]]; then
-    read -r -u "$prompt_fd" -p "$prompt [$default_value]: " value
+    printf '%s [%s]: ' "$prompt" "$default_value" >&4
+    read -r -u "$prompt_fd" value
   else
-    read -r -p "$prompt [$default_value]: " value
+    printf '%s [%s]: ' "$prompt" "$default_value"
+    read -r value
   fi
   if [[ -z "$value" ]]; then
     value="$default_value"
@@ -113,12 +115,9 @@ prompt_secret() {
   [[ "$prompt_fd" -ne 0 ]] || die "password required but no interactive terminal is available; set PASSWORD or avoid --dry-run"
 
   while true; do
-    read -r -u "$prompt_fd" -s -p "$prompt: " value
-    if [[ "$prompt_fd" -ne 0 ]]; then
-      printf '\n' >&4
-    else
-      printf '\n'
-    fi
+    printf '%s: ' "$prompt" >&4
+    read -r -u "$prompt_fd" -s value
+    printf '\n' >&4
     [[ -n "$value" ]] || continue
     printf -v "$var_name" '%s' "$value"
     return
@@ -446,7 +445,7 @@ main() {
   prompt_default cores "Container CPU cores" "$cores"
   prompt_default irc_nick "IRC nick" "$irc_nick"
   prompt_default znc_user "ZNC admin username" "${znc_user:-$irc_nick}"
-  prompt_default irc_alt_nick "IRC alternate nick" "${irc_alt_nick:-${irc_nick}_}"
+  prompt_default irc_alt_nick "IRC alternate nick" "${irc_alt_nick:-${znc_user}_}"
   prompt_default irc_realname "IRC real name" "${irc_realname:-$irc_nick}"
   prompt_default irc_server "IRC server" "$irc_server"
   prompt_default irc_port "IRC server port" "$irc_port"
