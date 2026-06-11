@@ -400,8 +400,8 @@ main() {
   local swap="${SWAP:-256}"
   local disk="${DISK:-2}"
   local cores="${CORES:-1}"
-  local znc_user="${ZNC_USER:-znc}"
   local irc_nick="${NICK:-}"
+  local znc_user="${ZNC_USER:-}"
   local irc_alt_nick="${ALT_NICK:-}"
   local irc_realname="${REALNAME:-}"
   local znc_password="${PASSWORD:-}"
@@ -425,8 +425,8 @@ main() {
   prompt_default swap "Container swap (MB)" "$swap"
   prompt_default disk "Container root disk (GB)" "$disk"
   prompt_default cores "Container CPU cores" "$cores"
-  prompt_default znc_user "ZNC admin username" "$znc_user"
   prompt_default irc_nick "IRC nick" "${irc_nick:-$znc_user}"
+  prompt_default znc_user "ZNC admin username" "${znc_user:-$irc_nick}"
   prompt_default irc_alt_nick "IRC alternate nick" "${irc_alt_nick:-${irc_nick}_}"
   prompt_default irc_realname "IRC real name" "${irc_realname:-$irc_nick}"
   prompt_default irc_server "IRC server" "$irc_server"
@@ -448,8 +448,8 @@ main() {
     printf '  Disk: %s GB\n' "$disk"
     printf '  Cores: %s\n' "$cores"
     printf 'Would configure ZNC with:\n'
-    printf '  ZNC user: %s\n' "$znc_user"
     printf '  IRC nick: %s\n' "$irc_nick"
+    printf '  ZNC user: %s\n' "$znc_user"
     printf '  Alt nick: %s\n' "$irc_alt_nick"
     printf '  Real name: %s\n' "$irc_realname"
     printf '  IRC network: %s\n' "$irc_network"
@@ -479,8 +479,8 @@ main() {
     printf 'IRC client login format: %s/%s:<password>\n' "$znc_user" "$irc_network"
   fi
   printf 'IRC server inside ZNC: %s:%s\n' "$irc_server" "$irc_port"
-  printf 'ZNC user: %s\n' "$znc_user"
   printf 'IRC nick: %s\n' "$irc_nick"
+  printf 'ZNC user: %s\n' "$znc_user"
 }
 
 main "$@"

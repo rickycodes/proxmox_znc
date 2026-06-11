@@ -52,7 +52,7 @@ Or pass overrides:
 ## Install-Time Knobs
 
 - `--hostname`: container hostname
-- `--nick`: IRC nick inside the network
+- `--nick`: IRC nick inside the network; also used as the ZNC admin username by default
 - `--alt-nick`: fallback nick
 - `--znc-user`: ZNC admin username
 - `--password`: ZNC password
