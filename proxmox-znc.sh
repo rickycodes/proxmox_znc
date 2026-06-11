@@ -330,6 +330,24 @@ EOF
   rm -f "$bootstrap"
 }
 
+wait_for_container_ip() {
+  local ctid="$1"
+  local tries=0
+  local ip=""
+
+  while [[ "$tries" -lt 15 ]]; do
+    ip="$(pct exec "$ctid" -- sh -lc 'hostname -I 2>/dev/null | awk "{ print \$1 }"' 2>/dev/null || true)"
+    if [[ -n "$ip" ]]; then
+      printf '%s' "$ip"
+      return 0
+    fi
+    tries=$((tries + 1))
+    sleep 2
+  done
+
+  return 1
+}
+
 main() {
   while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -469,7 +487,7 @@ main() {
   bootstrap_container "$ctid"
 
   local container_ip
-  container_ip="$(pct exec "$ctid" -- hostname -I 2>/dev/null | awk '{ print $1 }' || true)"
+  container_ip="$(wait_for_container_ip "$ctid" || true)"
 
   log "done"
   printf '\n'
