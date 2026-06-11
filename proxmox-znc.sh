@@ -476,7 +476,10 @@ main() {
   printf 'Hostname: %s\n' "$hostname"
   if [[ -n "$container_ip" ]]; then
     printf 'Container IP: %s\n' "$container_ip"
+    printf 'ZNC listener: %s:%s\n' "$container_ip" "$irc_port"
     printf 'IRC client login format: %s/%s:<password>\n' "$znc_user" "$irc_network"
+  else
+    printf 'Container IP: unavailable yet\n'
   fi
   printf 'IRC server inside ZNC: %s:%s\n' "$irc_server" "$irc_port"
   printf 'IRC nick: %s\n' "$irc_nick"
