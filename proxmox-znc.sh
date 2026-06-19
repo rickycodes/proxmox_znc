@@ -446,7 +446,7 @@ main() {
   prompt_default irc_nick "IRC nick" "$irc_nick"
   prompt_default znc_user "ZNC admin username" "${znc_user:-$irc_nick}"
   prompt_default irc_alt_nick "IRC alternate nick" "${irc_alt_nick:-${znc_user}_}"
-  prompt_default irc_realname "IRC real name" "${irc_realname:-$irc_nick}"
+  prompt_default irc_realname "IRC real name" "${irc_realname:-$znc_user}"
   prompt_default irc_server "IRC server" "$irc_server"
   prompt_default irc_port "IRC server port" "$irc_port"
   prompt_default irc_network "IRC network name" "$irc_network"

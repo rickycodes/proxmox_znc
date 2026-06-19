@@ -33,7 +33,7 @@ chmod +x proxmox-znc.sh
 Dry-run it from a fetched copy:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<you>/<repo>/main/proxmox-znc.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/proxmox-znc.sh | bash -s -- --dry-run
 ```
 
 Or pass overrides:
