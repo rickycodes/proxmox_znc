@@ -10,7 +10,9 @@ pub fn text(prompt: &str, default: &str, slot: &mut Option<String>) -> Result<()
     io::stdout().flush().map_err(|e| e.to_string())?;
 
     let mut input = String::new();
-    io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
+    io::stdin()
+        .read_line(&mut input)
+        .map_err(|e| e.to_string())?;
     let input = input.trim_end_matches(['\n', '\r']);
     let value = if input.is_empty() { default } else { input };
     *slot = Some(value.to_string());
@@ -29,12 +31,16 @@ where
     io::stdout().flush().map_err(|e| e.to_string())?;
 
     let mut input = String::new();
-    io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
+    io::stdin()
+        .read_line(&mut input)
+        .map_err(|e| e.to_string())?;
     let input = input.trim_end_matches(['\n', '\r']);
     *slot = Some(if input.is_empty() {
         default
     } else {
-        input.parse().map_err(|_| format!("invalid number: {input}"))?
+        input
+            .parse()
+            .map_err(|_| format!("invalid number: {input}"))?
     });
     Ok(())
 }
@@ -52,7 +58,9 @@ pub fn secret(prompt: &str, slot: &mut Option<String>) -> Result<(), String> {
     io::stdout().flush().map_err(|e| e.to_string())?;
 
     let mut input = String::new();
-    io::stdin().read_line(&mut input).map_err(|e| e.to_string())?;
+    io::stdin()
+        .read_line(&mut input)
+        .map_err(|e| e.to_string())?;
     let input = input.trim_end_matches(['\n', '\r']);
 
     let _ = Command::new("sh")

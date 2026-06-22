@@ -1,7 +1,7 @@
-mod constants;
 mod cli;
-mod prompt;
+mod constants;
 mod process;
+mod prompt;
 mod spec;
 
 use cli::Config;
