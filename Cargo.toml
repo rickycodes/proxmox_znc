@@ -1,0 +1,13 @@
+[package]
+name = "proxmox-znc"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive Proxmox LXC installer for a basic ZNC bounce"
+license = "MIT"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+

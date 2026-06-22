@@ -2,6 +2,8 @@
 
 A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a basic ZNC bounce.
 
+The shell installer is the current working path. A Rust CLI scaffold has now been added as the cleaner interactive direction for the next iteration.
+
 ## Defaults
 
 - IRC network: `irc.libera.chat`
@@ -48,6 +50,18 @@ Or pass overrides:
   --bridge vmbr0 \
   --storage local-lvm
 ```
+
+## Rust Scaffold
+
+The repo now includes an initial Rust CLI scaffold in `src/` and `Cargo.toml`.
+
+Planned shape:
+- interactive prompts for the install values
+- Proxmox container creation from Rust
+- ZNC bootstrap from Rust
+- a tiny `scripts/install.sh` wrapper for `curl`-based installs
+
+The Rust code is intentionally minimal right now and needs a release binary before `scripts/install.sh` can be used end to end.
 
 ## Install-Time Knobs
 
