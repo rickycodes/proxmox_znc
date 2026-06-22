@@ -16,17 +16,24 @@ fn main() {
 }
 
 fn banner() {
-    println!(
-        r#"
- ███████╗███╗   ██╗███████╗
- ╚══███╔╝████╗  ██║██╔════╝
-   ███╔╝ ██╔██╗ ██║██║  
-  ███╔╝  ██║╚██╗██║██║  
- ███████╗██║ ╚████║███████╗
- ╚══════╝╚═╝  ╚═══╝╚══════╝
+    const PINK: &str = "\x1b[38;5;205m";
+    const CYAN: &str = "\x1b[38;5;51m";
+    const RESET: &str = "\x1b[0m";
 
-Proxmox ZNC installer
-"#
+    println!(
+        "\n {pink}╔════════════════════════════╗{reset}\n\
+{pink} ║ {cyan}███████{pink}╗{cyan}███{pink}╗   {cyan}██{pink}╗{cyan}███████{pink}╗ ║{reset}\n\
+{pink} ║ ╚══{cyan}███{pink}╔╝{cyan}████{pink}╗  {cyan}██{pink}║{cyan}██{pink}╔════╝ ║{reset}\n\
+{pink} ║ {cyan}  ███{pink}╔╝ {cyan}██{pink}╔{cyan}██{pink}╗ {cyan}██{pink}║{cyan}██{pink}║      ║{reset}\n\
+{pink} ║ {cyan} ███{pink}╔╝  {cyan}██{pink}║╚{cyan}██{pink}╗{cyan}██{pink}║{cyan}██{pink}║      ║{reset}\n\
+{pink} ║ {cyan}███████{pink}╗{cyan}██{pink}║ {pink}╚{cyan}████{pink}║{cyan}███████{pink}╗ ║{reset}\n\
+{pink} ║ ╚══════╝╚═╝  ╚═══╝╚══════╝ ║{reset}\n\
+{pink} ╚════════════════════════════╝{reset}\n\
+\n\
+{cyan}Proxmox ZNC installer{reset}\n",
+        pink = PINK,
+        cyan = CYAN,
+        reset = RESET
     );
 }
 
