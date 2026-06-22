@@ -1,3 +1,4 @@
+use crate::constants;
 use crate::cli::Config;
 use crate::process::CommandRunner;
 
@@ -20,29 +21,27 @@ pub struct Spec {
     pub irc_network: String,
 }
 
-const ZNC:&str = "znc";
-
 impl From<&Config> for Spec {
     fn from(cfg: &Config) -> Self {
         Self {
-            hostname: cfg.hostname.clone().unwrap_or_else(|| ZNC.into()),
-            storage: cfg.storage.clone().unwrap_or_else(|| "local-lvm".into()),
-            template_storage: cfg.template_storage.clone().unwrap_or_else(|| "local".into()),
-            bridge: cfg.bridge.clone().unwrap_or_else(|| "vmbr0".into()),
-            memory: cfg.memory.unwrap_or(256),
-            swap: cfg.swap.unwrap_or(256),
-            disk: cfg.disk.unwrap_or(2),
-            cores: cfg.cores.unwrap_or(1),
-            znc_user: cfg.znc_user.clone().unwrap_or_else(|| ZNC.into()),
-            nick: cfg.nick.clone().unwrap_or_else(|| ZNC.into()),
+            hostname: cfg.hostname.clone().unwrap_or_else(|| constants::DEFAULT_CONTAINER_HOSTNAME.into()),
+            storage: cfg.storage.clone().unwrap_or_else(|| constants::DEFAULT_STORAGE.into()),
+            template_storage: cfg.template_storage.clone().unwrap_or_else(|| constants::DEFAULT_TEMPLATE_STORAGE.into()),
+            bridge: cfg.bridge.clone().unwrap_or_else(|| constants::DEFAULT_BRIDGE.into()),
+            memory: cfg.memory.unwrap_or(constants::DEFAULT_MEMORY_MB),
+            swap: cfg.swap.unwrap_or(constants::DEFAULT_SWAP_MB),
+            disk: cfg.disk.unwrap_or(constants::DEFAULT_DISK_GB),
+            cores: cfg.cores.unwrap_or(constants::DEFAULT_CORES),
+            znc_user: cfg.znc_user.clone().unwrap_or_else(|| constants::DEFAULT_NICK.into()),
+            nick: cfg.nick.clone().unwrap_or_else(|| constants::DEFAULT_NICK.into()),
             alt_nick: cfg
                 .alt_nick
                 .clone()
-                .unwrap_or_else(|| format!("{}_", cfg.znc_user.clone().unwrap_or_else(|| ZNC.into()))),
-            realname: cfg.realname.clone().unwrap_or_else(|| ZNC.into()),
-            irc_server: cfg.irc_server.clone().unwrap_or_else(|| "irc.libera.chat".into()),
-            irc_port: cfg.irc_port.unwrap_or(6697),
-            irc_network: cfg.irc_network.clone().unwrap_or_else(|| "libera".into()),
+                .unwrap_or_else(|| format!("{}_", cfg.znc_user.clone().unwrap_or_else(|| constants::DEFAULT_NICK.into()))),
+            realname: cfg.realname.clone().unwrap_or_else(|| constants::DEFAULT_NICK.into()),
+            irc_server: cfg.irc_server.clone().unwrap_or_else(|| constants::DEFAULT_IRC_SERVER.into()),
+            irc_port: cfg.irc_port.unwrap_or(constants::DEFAULT_IRC_PORT),
+            irc_network: cfg.irc_network.clone().unwrap_or_else(|| constants::DEFAULT_IRC_NETWORK.into()),
         }
     }
 }

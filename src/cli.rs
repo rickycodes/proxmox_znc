@@ -1,3 +1,4 @@
+use crate::constants;
 use crate::prompt;
 use std::env;
 
@@ -78,22 +79,22 @@ impl Config {
     }
 
     pub fn prompt_missing(&mut self) -> Result<(), String> {
-        prompt::text("Container hostname", "znc", &mut self.hostname)?;
-        prompt::text("Root disk storage", "local-lvm", &mut self.storage)?;
-        prompt::text("Template storage", "local", &mut self.template_storage)?;
-        prompt::text("Proxmox bridge", "vmbr0", &mut self.bridge)?;
-        prompt::number("Container RAM (MB)", 256, &mut self.memory)?;
-        prompt::number("Container swap (MB)", 256, &mut self.swap)?;
-        prompt::number("Container root disk (GB)", 2, &mut self.disk)?;
-        prompt::number("Container CPU cores", 1, &mut self.cores)?;
-        prompt::text("IRC nick", "znc", &mut self.nick)?;
-        prompt::text("ZNC admin username", self.nick.as_deref().unwrap_or("znc"), &mut self.znc_user)?;
-        let alt_default = format!("{}_", self.znc_user.as_deref().unwrap_or("znc"));
+        prompt::text("Container hostname", constants::DEFAULT_CONTAINER_HOSTNAME, &mut self.hostname)?;
+        prompt::text("Root disk storage", constants::DEFAULT_STORAGE, &mut self.storage)?;
+        prompt::text("Template storage", constants::DEFAULT_TEMPLATE_STORAGE, &mut self.template_storage)?;
+        prompt::text("Proxmox bridge", constants::DEFAULT_BRIDGE, &mut self.bridge)?;
+        prompt::number("Container RAM (MB)", constants::DEFAULT_MEMORY_MB, &mut self.memory)?;
+        prompt::number("Container swap (MB)", constants::DEFAULT_SWAP_MB, &mut self.swap)?;
+        prompt::number("Container root disk (GB)", constants::DEFAULT_DISK_GB, &mut self.disk)?;
+        prompt::number("Container CPU cores", constants::DEFAULT_CORES, &mut self.cores)?;
+        prompt::text("IRC nick", constants::DEFAULT_NICK, &mut self.nick)?;
+        prompt::text("ZNC admin username", self.nick.as_deref().unwrap_or(constants::DEFAULT_NICK), &mut self.znc_user)?;
+        let alt_default = format!("{}_", self.znc_user.as_deref().unwrap_or(constants::DEFAULT_NICK));
         prompt::text("IRC alternate nick", &alt_default, &mut self.alt_nick)?;
-        prompt::text("IRC real name", self.nick.as_deref().unwrap_or("znc"), &mut self.realname)?;
-        prompt::text("IRC server", "irc.libera.chat", &mut self.irc_server)?;
-        prompt::number("IRC server port", 6697, &mut self.irc_port)?;
-        prompt::text("IRC network name", "libera", &mut self.irc_network)?;
+        prompt::text("IRC real name", self.nick.as_deref().unwrap_or(constants::DEFAULT_NICK), &mut self.realname)?;
+        prompt::text("IRC server", constants::DEFAULT_IRC_SERVER, &mut self.irc_server)?;
+        prompt::number("IRC server port", constants::DEFAULT_IRC_PORT, &mut self.irc_port)?;
+        prompt::text("IRC network name", constants::DEFAULT_IRC_NETWORK, &mut self.irc_network)?;
         prompt::secret("ZNC password", &mut self.password)?;
         Ok(())
     }
@@ -143,4 +144,3 @@ fn parse_u32(s: &str) -> Result<u32, String> {
 fn parse_u16(s: &str) -> Result<u16, String> {
     s.parse().map_err(|_| format!("invalid number: {s}"))
 }
-

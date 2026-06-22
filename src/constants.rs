@@ -1,0 +1,12 @@
+pub const DEFAULT_CONTAINER_HOSTNAME: &str = "znc";
+pub const DEFAULT_STORAGE: &str = "local-lvm";
+pub const DEFAULT_TEMPLATE_STORAGE: &str = "local";
+pub const DEFAULT_BRIDGE: &str = "vmbr0";
+pub const DEFAULT_MEMORY_MB: u32 = 256;
+pub const DEFAULT_SWAP_MB: u32 = 256;
+pub const DEFAULT_DISK_GB: u32 = 2;
+pub const DEFAULT_CORES: u32 = 1;
+pub const DEFAULT_IRC_SERVER: &str = "irc.libera.chat";
+pub const DEFAULT_IRC_PORT: u16 = 6697;
+pub const DEFAULT_IRC_NETWORK: &str = "libera";
+pub const DEFAULT_NICK: &str = DEFAULT_CONTAINER_HOSTNAME;
