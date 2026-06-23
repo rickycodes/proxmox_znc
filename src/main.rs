@@ -28,10 +28,11 @@ fn banner() {
 {pink} ║ ╚══════╝╚═╝  ╚═══╝╚══════╝ ║{reset}\n\
 {pink} ╚════════════════════════════╝{reset}\n\
 \n\
-{cyan}Proxmox ZNC installer{reset}\n",
+{cyan}Proxmox ZNC installer v{version}{reset}\n",
         pink = "\x1b[38;5;205m",
         cyan = "\x1b[38;5;51m",
-        reset = "\x1b[0m"
+        reset = "\x1b[0m",
+        version = constants::VERSION,
     );
 }
 
@@ -40,7 +41,7 @@ fn run() -> Result<(), String> {
     let runner = ShellRunner;
     cfg.prompt_missing(&runner)?;
 
-    let spec = Spec::from(&cfg);
+    let mut spec = Spec::from(&cfg);
 
     if cfg.dry_run {
         spec.print();
@@ -49,7 +50,7 @@ fn run() -> Result<(), String> {
 
     spec.validate_host(&runner)?;
     spec.install(&runner)?;
-    spec.print_done(&runner)?;
+    spec.print_done()?;
 
     Ok(())
 }
