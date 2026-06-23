@@ -166,12 +166,6 @@ impl Spec {
             self.ctid.as_deref().unwrap_or("unavailable")
         );
         println!("Hostname: {}", self.hostname);
-        if let Some(ip) = &self.container_ip {
-            println!("Container IP: {}", ip);
-            println!("ZNC listener: {}:{}", ip, self.irc_port);
-        } else {
-            println!("Container IP: unavailable yet");
-        }
         println!("IRC server inside ZNC: {}:{}", self.irc_server, self.irc_port);
         println!("IRC nick: {}", self.nick);
         println!("ZNC user: {}", self.znc_user);
