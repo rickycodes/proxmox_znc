@@ -60,8 +60,30 @@ Planned shape:
 - Proxmox container creation from Rust
 - ZNC bootstrap from Rust
 - a tiny `scripts/install.sh` wrapper for `curl`-based installs
+- a GitHub Actions release workflow that builds and publishes Linux binaries
 
-The Rust code is intentionally minimal right now and needs a release binary before `scripts/install.sh` can be used end to end.
+The Rust code is intentionally minimal right now and needs a GitHub Release before `scripts/install.sh` can be used end to end.
+
+## Release Flow
+
+Create a tag like `v0.1.0` and push it:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+GitHub Actions will build:
+- `proxmox-znc-x86_64`
+- `proxmox-znc-aarch64`
+
+and attach them to the release.
+
+Then the install wrapper can fetch the right binary from:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash
+```
 
 ## Install-Time Knobs
 
