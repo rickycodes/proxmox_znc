@@ -60,33 +60,14 @@ pub fn secret(prompt: &str, slot: &mut Option<String>) -> Result<(), String> {
         return Ok(());
     }
 
-    let _ = Command::new("sh")
-        .args([
-            "-lc",
-            &format!("stty -echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
-        ])
-        .status();
+    let first = read_secret(prompt)?;
+    let second = read_secret(&format!("{prompt} (confirm)"))?;
 
-    let (mut input, mut output) = tty_pair()?;
-    write!(output, "{prompt}: ").map_err(|e| e.to_string())?;
-    output.flush().map_err(|e| e.to_string())?;
-
-    let mut line = String::new();
-    input.read_line(&mut line).map_err(|e| e.to_string())?;
-    let line = line.trim_end_matches(['\n', '\r']);
-
-    let _ = Command::new("sh")
-        .args([
-            "-lc",
-            &format!("stty echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
-        ])
-        .status();
-    let _ = writeln!(io::stdout());
-
-    if line.is_empty() {
-        return Err(format!("{prompt} is required"));
+    if first != second {
+        return Err(format!("{prompt} entries do not match"));
     }
-    *slot = Some(line.to_string());
+
+    *slot = Some(first);
     Ok(())
 }
 
@@ -142,4 +123,35 @@ pub fn choose(
         *slot = Some(options[idx - 1].clone());
         return Ok(());
     }
+}
+
+fn read_secret(prompt: &str) -> Result<String, String> {
+    let _ = Command::new("sh")
+        .args([
+            "-lc",
+            &format!("stty -echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
+        ])
+        .status();
+
+    let (mut input, mut output) = tty_pair()?;
+    write!(output, "{prompt}: ").map_err(|e| e.to_string())?;
+    output.flush().map_err(|e| e.to_string())?;
+
+    let mut line = String::new();
+    input.read_line(&mut line).map_err(|e| e.to_string())?;
+    let line = line.trim_end_matches(['\n', '\r']).to_string();
+
+    let _ = Command::new("sh")
+        .args([
+            "-lc",
+            &format!("stty echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
+        ])
+        .status();
+    let _ = writeln!(io::stdout());
+
+    if line.is_empty() {
+        return Err(format!("{prompt} is required"));
+    }
+
+    Ok(line)
 }
