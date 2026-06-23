@@ -100,6 +100,8 @@ curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts
 - `--memory`, `--swap`, `--disk`, `--cores`: container sizing
 - `--dry-run`: print the planned container and ZNC settings, then exit
 
+When you run the Rust installer interactively, it detects active Proxmox storages and lets you pick one for the root disk and template storage instead of forcing a hardcoded default.
+
 ## After Install
 
 - IRC client login format: `<znc-user>/<network>:<password>`

@@ -80,22 +80,40 @@ impl Config {
         Ok(cfg)
     }
 
-    pub fn prompt_missing(&mut self) -> Result<(), String> {
+    pub fn prompt_missing<R: crate::process::CommandRunner>(
+        &mut self,
+        runner: &R,
+    ) -> Result<(), String> {
         prompt::text(
             "Container hostname",
             constants::DEFAULT_CONTAINER_HOSTNAME,
             &mut self.hostname,
         )?;
-        prompt::text(
-            "Root disk storage",
-            constants::DEFAULT_STORAGE,
-            &mut self.storage,
-        )?;
-        prompt::text(
-            "Template storage",
-            constants::DEFAULT_TEMPLATE_STORAGE,
-            &mut self.template_storage,
-        )?;
+        let storages = crate::storage::detect_storages(runner).unwrap_or_default();
+        if storages.is_empty() {
+            prompt::text(
+                "Root disk storage",
+                constants::DEFAULT_STORAGE,
+                &mut self.storage,
+            )?;
+            prompt::text(
+                "Template storage",
+                constants::DEFAULT_TEMPLATE_STORAGE,
+                &mut self.template_storage,
+            )?;
+        } else {
+            let default_idx = storages
+                .iter()
+                .position(|s| s == constants::DEFAULT_STORAGE)
+                .unwrap_or(0);
+            prompt::choose("Root disk storage", default_idx, &storages, &mut self.storage)?;
+            prompt::choose(
+                "Template storage",
+                default_idx,
+                &storages,
+                &mut self.template_storage,
+            )?;
+        }
         prompt::text(
             "Proxmox bridge",
             constants::DEFAULT_BRIDGE,
