@@ -1,3 +1,4 @@
+use crate::constants;
 use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Write};
 use std::process::Command;
@@ -5,11 +6,11 @@ use std::process::Command;
 fn tty_pair() -> Result<(BufReader<std::fs::File>, std::fs::File), String> {
     let read = OpenOptions::new()
         .read(true)
-        .open("/dev/tty")
+        .open(constants::DEV_TTY)
         .map_err(|e| e.to_string())?;
     let write = OpenOptions::new()
         .write(true)
-        .open("/dev/tty")
+        .open(constants::DEV_TTY)
         .map_err(|e| e.to_string())?;
     Ok((BufReader::new(read), write))
 }
@@ -60,7 +61,10 @@ pub fn secret(prompt: &str, slot: &mut Option<String>) -> Result<(), String> {
     }
 
     let _ = Command::new("sh")
-        .args(["-lc", "stty -echo < /dev/tty >/dev/tty 2>/dev/null"])
+        .args([
+            "-lc",
+            &format!("stty -echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
+        ])
         .status();
 
     let (mut input, mut output) = tty_pair()?;
@@ -72,7 +76,10 @@ pub fn secret(prompt: &str, slot: &mut Option<String>) -> Result<(), String> {
     let line = line.trim_end_matches(['\n', '\r']);
 
     let _ = Command::new("sh")
-        .args(["-lc", "stty echo < /dev/tty >/dev/tty 2>/dev/null"])
+        .args([
+            "-lc",
+            &format!("stty echo < {0} > {0} 2>/dev/null", constants::DEV_TTY),
+        ])
         .status();
     let _ = writeln!(io::stdout());
 
@@ -81,4 +88,58 @@ pub fn secret(prompt: &str, slot: &mut Option<String>) -> Result<(), String> {
     }
     *slot = Some(line.to_string());
     Ok(())
+}
+
+pub fn choose(
+    prompt: &str,
+    default_index: usize,
+    options: &[String],
+    slot: &mut Option<String>,
+) -> Result<(), String> {
+    if slot.as_deref().is_some() {
+        return Ok(());
+    }
+
+    if options.is_empty() {
+        return Err(format!("{prompt}: no options available"));
+    }
+
+    let (mut input, mut output) = tty_pair()?;
+    let default_index = default_index.min(options.len().saturating_sub(1));
+
+    writeln!(output, "{prompt}:").map_err(|e| e.to_string())?;
+    for (idx, option) in options.iter().enumerate() {
+        writeln!(output, "  [{}] {}", idx + 1, option).map_err(|e| e.to_string())?;
+    }
+
+    loop {
+        write!(output, "Choose [{}]: ", default_index + 1).map_err(|e| e.to_string())?;
+        output.flush().map_err(|e| e.to_string())?;
+
+        let mut line = String::new();
+        input.read_line(&mut line).map_err(|e| e.to_string())?;
+        let line = line.trim_end_matches(['\n', '\r']);
+
+        let idx = if line.is_empty() {
+            default_index + 1
+        } else {
+            match line.parse::<usize>() {
+                Ok(value) => value,
+                Err(_) => {
+                    writeln!(output, "Enter a number from 1 to {}", options.len())
+                        .map_err(|e| e.to_string())?;
+                    continue;
+                }
+            }
+        };
+
+        if idx == 0 || idx > options.len() {
+            writeln!(output, "Enter a number from 1 to {}", options.len())
+                .map_err(|e| e.to_string())?;
+            continue;
+        }
+
+        *slot = Some(options[idx - 1].clone());
+        return Ok(());
+    }
 }

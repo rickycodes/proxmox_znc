@@ -10,3 +10,4 @@ pub const DEFAULT_IRC_SERVER: &str = "irc.libera.chat";
 pub const DEFAULT_IRC_PORT: u16 = 6697;
 pub const DEFAULT_IRC_NETWORK: &str = "libera";
 pub const DEFAULT_NICK: &str = DEFAULT_CONTAINER_HOSTNAME;
+pub const DEV_TTY: &str = "/dev/tty";
