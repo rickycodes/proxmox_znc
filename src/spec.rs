@@ -33,7 +33,7 @@ impl From<&Config> for Spec {
             hostname: cfg
                 .hostname
                 .clone()
-                .unwrap_or_else(|| constants::DEFAULT_CONTAINER_HOSTNAME.into()),
+                .unwrap_or_else(|| constants::DEFAULT_ZNC_NAME.into()),
             storage: cfg
                 .storage
                 .clone()
@@ -53,7 +53,7 @@ impl From<&Config> for Spec {
             znc_user: cfg
                 .znc_user
                 .clone()
-                .unwrap_or_else(|| constants::DEFAULT_NICK.into()),
+                .unwrap_or_else(|| constants::DEFAULT_ZNC_USER.into()),
             nick: cfg
                 .nick
                 .clone()
@@ -63,7 +63,7 @@ impl From<&Config> for Spec {
                     "{}_",
                     cfg.znc_user
                         .clone()
-                        .unwrap_or_else(|| constants::DEFAULT_NICK.into())
+                        .unwrap_or_else(|| constants::DEFAULT_ZNC_USER.into())
                 )
             }),
             realname: cfg
@@ -86,23 +86,30 @@ impl From<&Config> for Spec {
 
 impl Spec {
     pub fn print(&self) {
-        println!("Would create Alpine LXC with:");
-        println!("  Hostname: {}", self.hostname);
-        println!("  Storage: {}", self.storage);
-        println!("  Template storage: {}", self.template_storage);
-        println!("  Bridge: {}", self.bridge);
-        println!("  Memory: {} MB", self.memory);
-        println!("  Swap: {} MB", self.swap);
-        println!("  Disk: {} GB", self.disk);
-        println!("  Cores: {}", self.cores);
-        println!("Would configure ZNC with:");
-        println!("  ZNC user: {}", self.znc_user);
-        println!("  IRC nick: {}", self.nick);
-        println!("  Alt nick: {}", self.alt_nick);
-        println!("  Real name: {}", self.realname);
-        println!("  IRC network: {}", self.irc_network);
-        println!("  IRC server: {}:{}", self.irc_server, self.irc_port);
-        println!("No changes made.");
+        let lines = [
+            format!("Would create Alpine LXC with:"),
+            String::new(),
+            format!("  Hostname: {}", self.hostname),
+            format!("  Storage: {}", self.storage),
+            format!("  Template storage: {}", self.template_storage),
+            format!("  Bridge: {}", self.bridge),
+            format!("  Memory: {} MB", self.memory),
+            format!("  Swap: {} MB", self.swap),
+            format!("  Disk: {} GB", self.disk),
+            format!("  Cores: {}", self.cores),
+            String::new(),
+            format!("Would configure ZNC with:"),
+            String::new(),
+            format!("  ZNC user: {}", self.znc_user),
+            format!("  IRC nick: {}", self.nick),
+            format!("  Alt nick: {}", self.alt_nick),
+            format!("  Real name: {}", self.realname),
+            format!("  IRC network: {}", self.irc_network),
+            format!("  IRC server: {}:{}", self.irc_server, self.irc_port),
+            String::new(),
+            format!("No changes made."),
+        ];
+        render_cyan_box(&lines);
     }
 
     pub fn validate_host<R: CommandRunner>(&self, runner: &R) -> Result<(), String> {
@@ -160,21 +167,38 @@ impl Spec {
     }
 
     pub fn print_done(&self) -> Result<(), String> {
-        println!();
-        println!(
-            "Container ID: {}",
-            self.ctid.as_deref().unwrap_or("unavailable")
-        );
-        println!("Hostname: {}", self.hostname);
-        println!("IRC server inside ZNC: {}:{}", self.irc_server, self.irc_port);
-        println!("IRC nick: {}", self.nick);
-        println!("ZNC user: {}", self.znc_user);
-        println!(
-            "IRC client login format: {}/{}:<password>",
-            self.znc_user, self.irc_network
-        );
+        let lines = [
+            format!(
+                "Container ID: {}",
+                self.ctid.as_deref().unwrap_or("unavailable")
+            ),
+            format!("Hostname: {}", self.hostname),
+            format!("IRC server inside ZNC: {}:{}", self.irc_server, self.irc_port),
+            format!("IRC nick: {}", self.nick),
+            format!("ZNC user: {}", self.znc_user),
+            format!(
+                "IRC client login format: {}/{}:<password>",
+                self.znc_user, self.irc_network
+            ),
+        ];
+        render_cyan_box(&lines);
         Ok(())
     }
+}
+
+fn render_cyan_box(lines: &[String]) {
+    let pink = "\x1b[38;5;205m";
+    let cyan = "\x1b[38;5;51m";
+    let reset = "\x1b[0m";
+    let width = lines.iter().map(|line| line.len()).max().unwrap_or(0);
+
+    println!();
+    println!("{pink}╔{}╗{reset}", "═".repeat(width + 2));
+    for line in lines {
+        let padded = format!("{line:<width$}", width = width);
+        println!("{pink}║{reset}{cyan} {padded} {pink}║{reset}");
+    }
+    println!("{pink}╚{}╝{reset}", "═".repeat(width + 2));
 }
 
 fn map_arch(host_arch: &str) -> Result<String, String> {
@@ -207,7 +231,7 @@ fn detect_nameservers() -> String {
     }
 
     if servers.is_empty() {
-        servers.push("1.1.1.1".into());
+        servers.push(constants::DEFAULT_PING_TARGET.into());
         servers.push("8.8.8.8".into());
     }
 
@@ -311,95 +335,220 @@ fn bootstrap_container<R: CommandRunner>(
     irc_server: &str,
     irc_port: u16,
 ) -> Result<(), String> {
-    let script = r#"
-set -eu
+    push_resolv_conf(runner, ctid, nameservers)?;
+    wait_for_network(runner, ctid)?;
+    install_packages(runner, ctid)?;
+    ensure_znc_user(runner, ctid)?;
+    ensure_znc_dirs(runner, ctid)?;
+    run_makeconf(
+        runner,
+        ctid,
+        znc_user,
+        znc_password,
+        irc_nick,
+        irc_alt_nick,
+        irc_realname,
+        irc_network,
+        irc_server,
+        irc_port,
+    )?;
+    enable_service(runner, ctid)?;
 
-if [ -n "${NAMESERVERS:-}" ]; then
-  : > /etc/resolv.conf
-  for ns in $NAMESERVERS; do
-    printf 'nameserver %s\n' "$ns" >> /etc/resolv.conf
-  done
-fi
-
-wait_for_network() {
-  i=0
-  while [ "$i" -lt 12 ]; do
-    if ping -c 1 -W 1 1.1.1.1 >/dev/null 2>&1; then
-      return 0
-    fi
-    i=$((i + 1))
-    sleep 2
-  done
-  return 1
+    Ok(())
 }
 
-wait_for_network || true
+fn push_resolv_conf<R: CommandRunner>(
+    runner: &R,
+    ctid: &str,
+    nameservers: &str,
+) -> Result<(), String> {
+    let mut path = std::env::temp_dir();
+    path.push(format!("proxmox-znc-resolv-{ctid}.conf"));
 
-i=0
-while :; do
-  if apk add --no-cache ca-certificates znc znc-openrc >/dev/null 2>&1; then
-    break
-  fi
-  i=$((i + 1))
-  if [ "$i" -ge 5 ]; then
-    apk add --no-cache ca-certificates znc znc-openrc
-    exit 1
-  fi
-  sleep 4
-done
+    let content = nameservers
+        .split_whitespace()
+        .map(|ns| format!("nameserver {ns}\n"))
+        .collect::<String>();
+    fs::write(&path, content).map_err(|e| e.to_string())?;
 
-if ! id znc >/dev/null 2>&1; then
-  adduser -D -h /var/lib/znc -s /sbin/nologin znc
-fi
-
-install -d -o znc -g znc /var/lib/znc
-install -d -o znc -g znc /var/lib/znc/configs
-
-answers="$(mktemp)"
-trap 'rm -f "$answers"' EXIT
-
-{
-  printf '%s\n' \
-    '6697' \
-    'yes' \
-    'yes' \
-    '' \
-    "$ZNC_USER" \
-    "$ZNC_PASSWORD" \
-    "$ZNC_PASSWORD" \
-    "$IRC_NICK" \
-    "$IRC_ALT_NICK" \
-    "$ZNC_USER" \
-    "$IRC_REALNAME" \
-    '' \
-    'yes' \
-    "$IRC_NETWORK" \
-    "$IRC_SERVER" \
-    'yes' \
-    "$IRC_PORT" \
-    '' \
-    '' \
-    'no'
-} >"$answers"
-
-chown znc:znc "$answers"
-
-su -s /bin/sh znc -c "HOME=/var/lib/znc znc --datadir=/var/lib/znc --makeconf" <"$answers" >/tmp/znc-makeconf.log 2>&1 || {
-  cat /tmp/znc-makeconf.log >&2
-  exit 1
+    let path_str = path.to_string_lossy().to_string();
+    let args = vec![
+        String::from("push"),
+        ctid.to_string(),
+        path_str.clone(),
+        String::from("/etc/resolv.conf"),
+    ];
+    let result = runner.run_status_owned("pct", &args);
+    let _ = fs::remove_file(&path);
+    result
 }
 
-chown -R znc:znc /var/lib/znc
-rc-update add znc default >/dev/null
-rc-service znc start >/dev/null
-"#;
+fn wait_for_network<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    for _ in 0..12 {
+        let args = vec![
+            String::from("exec"),
+            ctid.to_string(),
+            String::from("--"),
+            String::from("ping"),
+            String::from("-c"),
+            String::from("1"),
+            String::from("-W"),
+            String::from("1"),
+            String::from(constants::DEFAULT_PING_TARGET),
+        ];
+        if runner.run_status_owned("pct", &args).is_ok() {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_secs(2));
+    }
+    Ok(())
+}
 
+fn install_packages<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    for _ in 0..5 {
+        let args = vec![
+            String::from("exec"),
+            ctid.to_string(),
+            String::from("--"),
+            String::from("apk"),
+            String::from("add"),
+            String::from("--no-cache"),
+            String::from("ca-certificates"),
+            String::from(constants::DEFAULT_ZNC_NAME),
+            String::from(constants::ZNC_OPENRC_PACKAGE),
+        ];
+        if runner.run_status_owned("pct", &args).is_ok() {
+            return Ok(());
+        }
+        std::thread::sleep(std::time::Duration::from_secs(4));
+    }
+    let args = vec![
+        String::from("exec"),
+        ctid.to_string(),
+        String::from("--"),
+        String::from("apk"),
+        String::from("add"),
+        String::from("--no-cache"),
+        String::from("ca-certificates"),
+        String::from(constants::DEFAULT_ZNC_NAME),
+        String::from(constants::ZNC_OPENRC_PACKAGE),
+    ];
+    runner.run_status_owned("pct", &args)
+}
+
+fn ensure_znc_user<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    let check_args = vec![
+        String::from("exec"),
+        ctid.to_string(),
+        String::from("--"),
+        String::from("id"),
+            String::from(constants::DEFAULT_ZNC_USER),
+        ];
+    if runner.run_status_owned("pct", &check_args).is_err() {
+        let add_args = vec![
+            String::from("exec"),
+            ctid.to_string(),
+            String::from("--"),
+            String::from("adduser"),
+            String::from("-D"),
+            String::from("-h"),
+            String::from("/var/lib/znc"),
+            String::from("-s"),
+            String::from("/sbin/nologin"),
+            String::from(constants::DEFAULT_ZNC_USER),
+        ];
+        runner.run_status_owned("pct", &add_args)?;
+    }
+    Ok(())
+}
+
+fn ensure_znc_dirs<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    let dirs = [
+        "/var/lib/znc",
+        "/var/lib/znc/configs",
+    ];
+    for dir in dirs {
+        let args = vec![
+            String::from("exec"),
+            ctid.to_string(),
+            String::from("--"),
+            String::from("install"),
+            String::from("-d"),
+            String::from("-o"),
+            String::from(constants::DEFAULT_ZNC_USER),
+            String::from("-g"),
+            String::from(constants::DEFAULT_ZNC_USER),
+            String::from(dir),
+        ];
+        runner.run_status_owned("pct", &args)?;
+    }
+    Ok(())
+}
+
+fn makeconf_answers(
+    znc_user: &str,
+    znc_password: &str,
+    irc_nick: &str,
+    irc_alt_nick: &str,
+    irc_realname: &str,
+    irc_network: &str,
+    irc_server: &str,
+    irc_port: u16,
+) -> String {
+    [
+        constants::DEFAULT_ZNC_LISTENER_PORT.to_string(),
+        String::from("yes"),
+        String::from("yes"),
+        String::new(),
+        znc_user.to_string(),
+        znc_password.to_string(),
+        znc_password.to_string(),
+        irc_nick.to_string(),
+        irc_alt_nick.to_string(),
+        znc_user.to_string(),
+        irc_realname.to_string(),
+        String::new(),
+        String::from("yes"),
+        irc_network.to_string(),
+        irc_server.to_string(),
+        String::from("yes"),
+        irc_port.to_string(),
+        String::new(),
+        String::new(),
+        String::from("no"),
+    ]
+    .join("\n")
+        + "\n"
+}
+
+fn run_makeconf<R: CommandRunner>(
+    runner: &R,
+    ctid: &str,
+    znc_user: &str,
+    znc_password: &str,
+    irc_nick: &str,
+    irc_alt_nick: &str,
+    irc_realname: &str,
+    irc_network: &str,
+    irc_server: &str,
+    irc_port: u16,
+) -> Result<(), String> {
+    let answers = makeconf_answers(
+        znc_user,
+        znc_password,
+        irc_nick,
+        irc_alt_nick,
+        irc_realname,
+        irc_network,
+        irc_server,
+        irc_port,
+    );
     let args = vec![
         String::from("exec"),
         ctid.to_string(),
         String::from("--"),
         String::from("env"),
-        format!("NAMESERVERS={nameservers}"),
+        String::from("HOME=/var/lib/znc"),
         format!("ZNC_USER={znc_user}"),
         format!("ZNC_PASSWORD={znc_password}"),
         format!("IRC_NICK={irc_nick}"),
@@ -408,12 +557,34 @@ rc-service znc start >/dev/null
         format!("IRC_NETWORK={irc_network}"),
         format!("IRC_SERVER={irc_server}"),
         format!("IRC_PORT={irc_port}"),
-        String::from("/bin/sh"),
-        String::from("-c"),
-        script.to_string(),
+        String::from(constants::DEFAULT_ZNC_USER),
+        String::from("--datadir=/var/lib/znc"),
+        String::from("--makeconf"),
     ];
+    runner.run_status_owned_with_input("pct", &args, &answers)
+}
 
-    runner.run_status_owned("pct", &args)
+fn enable_service<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    let add_args = vec![
+        String::from("exec"),
+        ctid.to_string(),
+        String::from("--"),
+        String::from("rc-update"),
+        String::from("add"),
+        String::from(constants::DEFAULT_ZNC_USER),
+        String::from("default"),
+    ];
+    runner.run_status_owned("pct", &add_args)?;
+
+    let start_args = vec![
+        String::from("exec"),
+        ctid.to_string(),
+        String::from("--"),
+        String::from("rc-service"),
+        String::from(constants::DEFAULT_ZNC_USER),
+        String::from("start"),
+    ];
+    runner.run_status_owned("pct", &start_args)
 }
 
 fn wait_for_container_ip<R: CommandRunner>(runner: &R, ctid: &str) -> Option<String> {

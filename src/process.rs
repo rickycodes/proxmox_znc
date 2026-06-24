@@ -5,6 +5,12 @@ pub trait CommandRunner {
     fn run_status(&self, program: &str, args: &[&str]) -> Result<(), String>;
     fn run_owned(&self, program: &str, args: &[String]) -> Result<String, String>;
     fn run_status_owned(&self, program: &str, args: &[String]) -> Result<(), String>;
+    fn run_status_owned_with_input(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &str,
+    ) -> Result<(), String>;
 }
 
 pub struct ShellRunner;
@@ -63,6 +69,33 @@ impl CommandRunner for ShellRunner {
             Ok(())
         } else {
             Err(format!("{program} exited with status {status}"))
+        }
+    }
+
+    fn run_status_owned_with_input(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &str,
+    ) -> Result<(), String> {
+        let mut child = Command::new(program)
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| e.to_string())?;
+
+        if let Some(stdin) = child.stdin.as_mut() {
+            use std::io::Write;
+            stdin.write_all(input.as_bytes()).map_err(|e| e.to_string())?;
+        }
+
+        let output = child.wait_with_output().map_err(|e| e.to_string())?;
+        if output.status.success() {
+            Ok(())
+        } else {
+            Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
         }
     }
 }

@@ -86,7 +86,7 @@ impl Config {
     ) -> Result<(), String> {
         prompt::text(
             "Container hostname",
-            constants::DEFAULT_CONTAINER_HOSTNAME,
+            constants::DEFAULT_ZNC_NAME,
             &mut self.hostname,
         )?;
         let storages = crate::storage::detect_storages(runner).unwrap_or_default();
@@ -142,12 +142,12 @@ impl Config {
         prompt::text("IRC nick", constants::DEFAULT_NICK, &mut self.nick)?;
         prompt::text(
             "ZNC admin username",
-            self.nick.as_deref().unwrap_or(constants::DEFAULT_NICK),
+            self.nick.as_deref().unwrap_or(constants::DEFAULT_ZNC_USER),
             &mut self.znc_user,
         )?;
         let alt_default = format!(
             "{}_",
-            self.znc_user.as_deref().unwrap_or(constants::DEFAULT_NICK)
+            self.znc_user.as_deref().unwrap_or(constants::DEFAULT_ZNC_USER)
         );
         prompt::text("IRC alternate nick", &alt_default, &mut self.alt_nick)?;
         prompt::text(

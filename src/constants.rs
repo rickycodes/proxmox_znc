@@ -1,4 +1,4 @@
-pub const DEFAULT_CONTAINER_HOSTNAME: &str = "znc";
+pub const DEFAULT_ZNC_NAME: &str = "znc";
 pub const DEFAULT_STORAGE: &str = "local-lvm";
 pub const DEFAULT_TEMPLATE_STORAGE: &str = "local";
 pub const DEFAULT_BRIDGE: &str = "vmbr0";
@@ -9,6 +9,10 @@ pub const DEFAULT_CORES: u32 = 1;
 pub const DEFAULT_IRC_SERVER: &str = "irc.libera.chat";
 pub const DEFAULT_IRC_PORT: u16 = 6697;
 pub const DEFAULT_IRC_NETWORK: &str = "libera";
-pub const DEFAULT_NICK: &str = DEFAULT_CONTAINER_HOSTNAME;
+pub const DEFAULT_NICK: &str = DEFAULT_ZNC_NAME;
+pub const DEFAULT_ZNC_USER: &str = DEFAULT_ZNC_NAME;
+pub const DEFAULT_ZNC_LISTENER_PORT: u16 = DEFAULT_IRC_PORT;
+pub const DEFAULT_PING_TARGET: &str = "1.1.1.1";
+pub const ZNC_OPENRC_PACKAGE: &str = "znc-openrc";
 pub const DEV_TTY: &str = "/dev/tty";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
