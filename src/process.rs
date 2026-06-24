@@ -13,6 +13,21 @@ pub trait CommandRunner {
     ) -> Result<(), String>;
 }
 
+fn format_failure(program: &str, status: std::process::ExitStatus, stdout: &[u8], stderr: &[u8]) -> String {
+    let stdout = String::from_utf8_lossy(stdout).trim().to_string();
+    let stderr = String::from_utf8_lossy(stderr).trim().to_string();
+
+    let mut parts = vec![format!("{program} exited with status {status}")];
+    if !stderr.is_empty() {
+        parts.push(format!("stderr: {stderr}"));
+    }
+    if !stdout.is_empty() {
+        parts.push(format!("stdout: {stdout}"));
+    }
+
+    parts.join(" | ")
+}
+
 pub struct ShellRunner;
 
 impl CommandRunner for ShellRunner {
@@ -25,7 +40,12 @@ impl CommandRunner for ShellRunner {
             .map_err(|e| e.to_string())?;
 
         if !output.status.success() {
-            return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+            return Err(format_failure(
+                program,
+                output.status,
+                &output.stdout,
+                &output.stderr,
+            ));
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -53,7 +73,12 @@ impl CommandRunner for ShellRunner {
             .map_err(|e| e.to_string())?;
 
         if !output.status.success() {
-            return Err(String::from_utf8_lossy(&output.stderr).trim().to_string());
+            return Err(format_failure(
+                program,
+                output.status,
+                &output.stdout,
+                &output.stderr,
+            ));
         }
 
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
@@ -95,7 +120,12 @@ impl CommandRunner for ShellRunner {
         if output.status.success() {
             Ok(())
         } else {
-            Err(String::from_utf8_lossy(&output.stderr).trim().to_string())
+            Err(format_failure(
+                program,
+                output.status,
+                &output.stdout,
+                &output.stderr,
+            ))
         }
     }
 }

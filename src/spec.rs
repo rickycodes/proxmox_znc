@@ -352,6 +352,7 @@ fn bootstrap_container<R: CommandRunner>(
         irc_server,
         irc_port,
     )?;
+    chown_znc_tree(runner, ctid)?;
     enable_service(runner, ctid)?;
 
     Ok(())
@@ -442,8 +443,8 @@ fn ensure_znc_user<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), Strin
         ctid.to_string(),
         String::from("--"),
         String::from("id"),
-            String::from(constants::DEFAULT_ZNC_USER),
-        ];
+        String::from(constants::DEFAULT_ZNC_USER),
+    ];
     if runner.run_status_owned("pct", &check_args).is_err() {
         let add_args = vec![
             String::from("exec"),
@@ -547,21 +548,27 @@ fn run_makeconf<R: CommandRunner>(
         String::from("exec"),
         ctid.to_string(),
         String::from("--"),
-        String::from("env"),
-        String::from("HOME=/var/lib/znc"),
-        format!("ZNC_USER={znc_user}"),
-        format!("ZNC_PASSWORD={znc_password}"),
-        format!("IRC_NICK={irc_nick}"),
-        format!("IRC_ALT_NICK={irc_alt_nick}"),
-        format!("IRC_REALNAME={irc_realname}"),
-        format!("IRC_NETWORK={irc_network}"),
-        format!("IRC_SERVER={irc_server}"),
-        format!("IRC_PORT={irc_port}"),
+        String::from("su"),
+        String::from("-s"),
+        String::from("/bin/sh"),
         String::from(constants::DEFAULT_ZNC_USER),
-        String::from("--datadir=/var/lib/znc"),
-        String::from("--makeconf"),
+        String::from("-c"),
+        String::from("HOME=/var/lib/znc znc --datadir=/var/lib/znc --makeconf"),
     ];
     runner.run_status_owned_with_input("pct", &args, &answers)
+}
+
+fn chown_znc_tree<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
+    let args = vec![
+        String::from("exec"),
+        ctid.to_string(),
+        String::from("--"),
+        String::from("chown"),
+        String::from("-R"),
+        String::from(constants::DEFAULT_ZNC_USER),
+        String::from("/var/lib/znc"),
+    ];
+    runner.run_status_owned("pct", &args)
 }
 
 fn enable_service<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
