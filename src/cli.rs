@@ -107,10 +107,25 @@ impl Config {
                 .position(|s| s == constants::DEFAULT_STORAGE)
                 .unwrap_or(0);
             prompt::choose("Root disk storage", default_idx, &storages, &mut self.storage)?;
+        }
+        let template_storages = crate::storage::detect_template_storages(runner).unwrap_or_default();
+        if template_storages.is_empty() {
+            prompt::text(
+                "Template storage",
+                constants::DEFAULT_TEMPLATE_STORAGE,
+                &mut self.template_storage,
+            )?;
+        } else if template_storages.len() == 1 {
+            self.template_storage = Some(template_storages[0].clone());
+        } else {
+            let default_idx = template_storages
+                .iter()
+                .position(|s| s == constants::DEFAULT_TEMPLATE_STORAGE)
+                .unwrap_or(0);
             prompt::choose(
                 "Template storage",
                 default_idx,
-                &storages,
+                &template_storages,
                 &mut self.template_storage,
             )?;
         }
