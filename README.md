@@ -2,8 +2,6 @@
 
 A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a basic ZNC bounce.
 
-The shell installer is the current working path. A Rust CLI scaffold has now been added as the cleaner interactive direction for the next iteration.
-
 ## Defaults
 
 - IRC network: `irc.libera.chat`
@@ -28,20 +26,19 @@ The shell installer is the current working path. A Rust CLI scaffold has now bee
 Run it on the Proxmox host as `root`:
 
 ```bash
-chmod +x proxmox-znc.sh
-./proxmox-znc.sh
+curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash
 ```
 
-Dry-run it from a fetched copy:
+Pass `--dry-run` to preview the planned install:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/proxmox-znc.sh | bash -s -- --dry-run
+curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash -s -- --dry-run
 ```
 
 Or pass overrides:
 
 ```bash
-./proxmox-znc.sh \
+curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash -s -- \
   --hostname znc \
   --nick ricky \
   --znc-user rickyznc \
@@ -50,19 +47,6 @@ Or pass overrides:
   --bridge vmbr0 \
   --storage local-lvm
 ```
-
-## Rust Scaffold
-
-The repo now includes an initial Rust CLI scaffold in `src/` and `Cargo.toml`.
-
-Planned shape:
-- interactive prompts for the install values
-- Proxmox container creation from Rust
-- ZNC bootstrap from Rust
-- a tiny `scripts/install.sh` wrapper for `curl`-based installs
-- a GitHub Actions release workflow that builds and publishes Linux binaries
-
-The Rust code is intentionally minimal right now and needs a GitHub Release before `scripts/install.sh` can be used end to end.
 
 ## Release Flow
 
@@ -107,4 +91,4 @@ When you run the Rust installer interactively, it detects active Proxmox storage
 - IRC client login format: `<znc-user>/<network>:<password>`
 - Default IRC server inside ZNC: `irc.libera.chat:6697`
 
-The script leaves ZNC’s generated config mostly alone. If you want to tune modules, listeners, or auth later, do that in ZNC itself after install.
+The installer leaves ZNC’s generated config mostly alone. If you want to tune modules, listeners, or auth later, do that in ZNC itself after install.
