@@ -5,6 +5,9 @@ edition = "2021"
 description = "Interactive Proxmox LXC installer for a basic ZNC bounce"
 license = "MIT"
 
+[dependencies]
+inquire = "0.9.4"
+
 [profile.release]
 opt-level = "z"
 lto = true

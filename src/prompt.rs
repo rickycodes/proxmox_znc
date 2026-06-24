@@ -1,4 +1,5 @@
 use crate::constants;
+use inquire::Select;
 use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Write};
 use std::process::Command;
@@ -85,44 +86,14 @@ pub fn choose(
         return Err(format!("{prompt}: no options available"));
     }
 
-    let (mut input, mut output) = tty_pair()?;
     let default_index = default_index.min(options.len().saturating_sub(1));
+    let selection = Select::new(prompt, options.to_vec())
+        .with_starting_cursor(default_index)
+        .prompt()
+        .map_err(|e| e.to_string())?;
 
-    writeln!(output, "{prompt}:").map_err(|e| e.to_string())?;
-    for (idx, option) in options.iter().enumerate() {
-        writeln!(output, "  [{}] {}", idx + 1, option).map_err(|e| e.to_string())?;
-    }
-
-    loop {
-        write!(output, "Choose [{}]: ", default_index + 1).map_err(|e| e.to_string())?;
-        output.flush().map_err(|e| e.to_string())?;
-
-        let mut line = String::new();
-        input.read_line(&mut line).map_err(|e| e.to_string())?;
-        let line = line.trim_end_matches(['\n', '\r']);
-
-        let idx = if line.is_empty() {
-            default_index + 1
-        } else {
-            match line.parse::<usize>() {
-                Ok(value) => value,
-                Err(_) => {
-                    writeln!(output, "Enter a number from 1 to {}", options.len())
-                        .map_err(|e| e.to_string())?;
-                    continue;
-                }
-            }
-        };
-
-        if idx == 0 || idx > options.len() {
-            writeln!(output, "Enter a number from 1 to {}", options.len())
-                .map_err(|e| e.to_string())?;
-            continue;
-        }
-
-        *slot = Some(options[idx - 1].clone());
-        return Ok(());
-    }
+    *slot = Some(selection);
+    Ok(())
 }
 
 fn read_secret(prompt: &str) -> Result<String, String> {
