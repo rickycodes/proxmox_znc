@@ -1,5 +1,5 @@
 use crate::constants;
-use inquire::Select;
+use dialoguer::{theme::ColorfulTheme, Select};
 use std::fs::OpenOptions;
 use std::io::{self, BufRead, BufReader, Write};
 use std::process::Command;
@@ -87,12 +87,14 @@ pub fn choose(
     }
 
     let default_index = default_index.min(options.len().saturating_sub(1));
-    let selection = Select::new(prompt, options.to_vec())
-        .with_starting_cursor(default_index)
-        .prompt()
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt(prompt)
+        .default(default_index)
+        .items(options)
+        .interact()
         .map_err(|e| e.to_string())?;
 
-    *slot = Some(selection);
+    *slot = Some(options[selection].clone());
     Ok(())
 }
 
