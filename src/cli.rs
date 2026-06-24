@@ -139,7 +139,8 @@ impl Config {
             constants::DEFAULT_CORES,
             &mut self.cores,
         )?;
-        prompt::text("IRC nick", constants::DEFAULT_NICK, &mut self.nick)?;
+        let default_nick = env_opt("HOSTNAME").unwrap_or_else(|| constants::DEFAULT_NICK.into());
+        prompt::text("IRC nick", &default_nick, &mut self.nick)?;
         prompt::text(
             "ZNC admin username",
             self.nick.as_deref().unwrap_or(constants::DEFAULT_ZNC_USER),
