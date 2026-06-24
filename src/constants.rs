@@ -16,3 +16,6 @@ pub const DEFAULT_PING_TARGET: &str = "1.1.1.1";
 pub const ZNC_OPENRC_PACKAGE: &str = "znc-openrc";
 pub const DEV_TTY: &str = "/dev/tty";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+pub const GITHUB_BASE_URL: &str = "https://github.com";
+pub const GITHUB_USER: &str = "rickycodes";
+pub const GITHUB_REPO: &str = "proxmox_znc";
