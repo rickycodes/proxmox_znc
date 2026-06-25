@@ -58,9 +58,9 @@ Update the version in `Cargo.toml`, commit the bump, tag the release, and push i
 
 ```bash
 git commit -am "bump"
-git tag v0.1.0-alpha.13
+git tag v0.1.0
 git push origin main
-git push origin v0.1.0-alpha.13
+git push origin v0.1.0
 ```
 
 GitHub Actions will build:
