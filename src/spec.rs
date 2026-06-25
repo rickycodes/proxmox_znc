@@ -87,7 +87,7 @@ impl From<&Config> for Spec {
 impl Spec {
     pub fn print(&self) {
         let lines = [
-            format!("Would create Alpine LXC with:"),
+            "Would create Alpine LXC with:".to_string(),
             String::new(),
             format!("  Hostname: {}", self.hostname),
             format!("  Storage: {}", self.storage),
@@ -98,7 +98,7 @@ impl Spec {
             format!("  Disk: {} GB", self.disk),
             format!("  Cores: {}", self.cores),
             String::new(),
-            format!("Would configure ZNC with:"),
+            "Would configure ZNC with:".to_string(),
             String::new(),
             format!("  ZNC user: {}", self.znc_user),
             format!("  IRC nick: {}", self.nick),
@@ -107,7 +107,7 @@ impl Spec {
             format!("  IRC network: {}", self.irc_network),
             format!("  IRC server: {}:{}", self.irc_server, self.irc_port),
             String::new(),
-            format!("No changes made."),
+            "No changes made.".to_string(),
         ];
         render_cyan_box(&lines);
     }
@@ -133,34 +133,10 @@ impl Spec {
 
         self.ctid = Some(ctid.clone());
 
-        create_container(
-            runner,
-            &ctid,
-            &self.hostname,
-            &self.storage,
-            &template_ref,
-            &self.bridge,
-            self.memory,
-            self.swap,
-            self.disk,
-            self.cores,
-            &nameservers,
-        )?;
+        create_container(runner, self, &ctid, &template_ref, &nameservers)?;
 
         runner.run_status_owned("pct", &[String::from("start"), ctid.clone()])?;
-        bootstrap_container(
-            runner,
-            &ctid,
-            &nameservers,
-            &self.znc_user,
-            &self.password,
-            &self.nick,
-            &self.alt_nick,
-            &self.realname,
-            &self.irc_network,
-            &self.irc_server,
-            self.irc_port,
-        )?;
+        bootstrap_container(runner, self, &ctid, &nameservers)?;
         self.container_ip = wait_for_container_ip(runner, &ctid);
 
         Ok(())
@@ -279,36 +255,30 @@ fn download_alpine_template<R: CommandRunner>(
 
 fn create_container<R: CommandRunner>(
     runner: &R,
+    spec: &Spec,
     ctid: &str,
-    hostname: &str,
-    storage: &str,
     template_ref: &str,
-    bridge: &str,
-    memory: u32,
-    swap: u32,
-    disk: u32,
-    cores: u32,
     nameservers: &str,
 ) -> Result<(), String> {
-    let rootfs = format!("{storage}:{disk}");
-    let net0 = format!("name=eth0,bridge={bridge},ip=dhcp");
+    let rootfs = format!("{}:{}", spec.storage, spec.disk);
+    let net0 = format!("name=eth0,bridge={},ip=dhcp", spec.bridge);
 
     let args = vec![
         String::from("create"),
         ctid.to_string(),
         template_ref.to_string(),
         String::from("--hostname"),
-        hostname.to_string(),
+        spec.hostname.clone(),
         String::from("--ostype"),
         String::from("alpine"),
         String::from("--unprivileged"),
         String::from("1"),
         String::from("--cores"),
-        cores.to_string(),
+        spec.cores.to_string(),
         String::from("--memory"),
-        memory.to_string(),
+        spec.memory.to_string(),
         String::from("--swap"),
-        swap.to_string(),
+        spec.swap.to_string(),
         String::from("--rootfs"),
         rootfs,
         String::from("--net0"),
@@ -324,34 +294,16 @@ fn create_container<R: CommandRunner>(
 
 fn bootstrap_container<R: CommandRunner>(
     runner: &R,
+    spec: &Spec,
     ctid: &str,
     nameservers: &str,
-    znc_user: &str,
-    znc_password: &str,
-    irc_nick: &str,
-    irc_alt_nick: &str,
-    irc_realname: &str,
-    irc_network: &str,
-    irc_server: &str,
-    irc_port: u16,
 ) -> Result<(), String> {
     push_resolv_conf(runner, ctid, nameservers)?;
     wait_for_network(runner, ctid)?;
     install_packages(runner, ctid)?;
     ensure_znc_user(runner, ctid)?;
     ensure_znc_dirs(runner, ctid)?;
-    run_makeconf(
-        runner,
-        ctid,
-        znc_user,
-        znc_password,
-        irc_nick,
-        irc_alt_nick,
-        irc_realname,
-        irc_network,
-        irc_server,
-        irc_port,
-    )?;
+    run_makeconf(runner, ctid, spec)?;
     chown_znc_tree(runner, ctid)?;
     enable_service(runner, ctid)?;
 
@@ -486,34 +438,25 @@ fn ensure_znc_dirs<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), Strin
     Ok(())
 }
 
-fn makeconf_answers(
-    znc_user: &str,
-    znc_password: &str,
-    irc_nick: &str,
-    irc_alt_nick: &str,
-    irc_realname: &str,
-    irc_network: &str,
-    irc_server: &str,
-    irc_port: u16,
-) -> String {
+fn makeconf_answers(spec: &Spec) -> String {
     [
         constants::DEFAULT_ZNC_LISTENER_PORT.to_string(),
         String::from("yes"),
         String::from("yes"),
         String::new(),
-        znc_user.to_string(),
-        znc_password.to_string(),
-        znc_password.to_string(),
-        irc_nick.to_string(),
-        irc_alt_nick.to_string(),
-        znc_user.to_string(),
-        irc_realname.to_string(),
+        spec.znc_user.clone(),
+        spec.password.clone(),
+        spec.password.clone(),
+        spec.nick.clone(),
+        spec.alt_nick.clone(),
+        spec.znc_user.clone(),
+        spec.realname.clone(),
         String::new(),
         String::from("yes"),
-        irc_network.to_string(),
-        irc_server.to_string(),
+        spec.irc_network.clone(),
+        spec.irc_server.clone(),
         String::from("yes"),
-        irc_port.to_string(),
+        spec.irc_port.to_string(),
         String::new(),
         String::new(),
         String::from("no"),
@@ -522,28 +465,8 @@ fn makeconf_answers(
         + "\n"
 }
 
-fn run_makeconf<R: CommandRunner>(
-    runner: &R,
-    ctid: &str,
-    znc_user: &str,
-    znc_password: &str,
-    irc_nick: &str,
-    irc_alt_nick: &str,
-    irc_realname: &str,
-    irc_network: &str,
-    irc_server: &str,
-    irc_port: u16,
-) -> Result<(), String> {
-    let answers = makeconf_answers(
-        znc_user,
-        znc_password,
-        irc_nick,
-        irc_alt_nick,
-        irc_realname,
-        irc_network,
-        irc_server,
-        irc_port,
-    );
+fn run_makeconf<R: CommandRunner>(runner: &R, ctid: &str, spec: &Spec) -> Result<(), String> {
+    let answers = makeconf_answers(spec);
     let args = vec![
         String::from("exec"),
         ctid.to_string(),
@@ -614,16 +537,27 @@ mod tests {
 
     #[test]
     fn makeconf_answers_includes_password_twice() {
-        let answers = makeconf_answers(
-            "znc",
-            "secret",
-            "nick",
-            "nick_",
-            "real",
-            "libera",
-            "irc.libera.chat",
-            6697,
-        );
+        let spec = Spec {
+            ctid: None,
+            container_ip: None,
+            hostname: "znc".into(),
+            storage: "local-lvm".into(),
+            template_storage: "local".into(),
+            bridge: "vmbr0".into(),
+            memory: 256,
+            swap: 256,
+            disk: 2,
+            cores: 1,
+            znc_user: "znc".into(),
+            nick: "nick".into(),
+            alt_nick: "nick_".into(),
+            realname: "real".into(),
+            password: "secret".into(),
+            irc_server: "irc.libera.chat".into(),
+            irc_port: 6697,
+            irc_network: "libera".into(),
+        };
+        let answers = makeconf_answers(&spec);
 
         let lines: Vec<&str> = answers.lines().collect();
         assert_eq!(lines[0], constants::DEFAULT_ZNC_LISTENER_PORT.to_string());
