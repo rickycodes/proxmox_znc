@@ -12,7 +12,6 @@ pub const DEFAULT_IRC_NETWORK: &str = "libera";
 pub const DEFAULT_NICK: &str = DEFAULT_ZNC_NAME;
 pub const DEFAULT_ZNC_USER: &str = DEFAULT_ZNC_NAME;
 pub const DEFAULT_ZNC_LISTENER_PORT: u16 = DEFAULT_IRC_PORT;
-pub const DEFAULT_PING_TARGET: &str = "1.1.1.1";
 pub const ZNC_OPENRC_PACKAGE: &str = "znc-openrc";
 pub const DEV_TTY: &str = "/dev/tty";
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

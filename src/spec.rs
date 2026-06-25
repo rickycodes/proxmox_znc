@@ -209,11 +209,6 @@ fn detect_nameservers() -> String {
         }
     }
 
-    if servers.is_empty() {
-        servers.push(constants::DEFAULT_PING_TARGET.into());
-        servers.push("8.8.8.8".into());
-    }
-
     servers.join(" ")
 }
 
@@ -303,7 +298,6 @@ fn bootstrap_container<R: CommandRunner>(
     nameservers: &str,
 ) -> Result<(), String> {
     push_resolv_conf(runner, ctid, nameservers)?;
-    wait_for_network(runner, ctid)?;
     install_packages(runner, ctid)?;
     ensure_znc_user(runner, ctid)?;
     ensure_znc_dirs(runner, ctid)?;
@@ -338,27 +332,6 @@ fn push_resolv_conf<R: CommandRunner>(
     let result = runner.run_status_owned("pct", &args);
     let _ = fs::remove_file(&path);
     result
-}
-
-fn wait_for_network<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
-    for _ in 0..12 {
-        let args = vec![
-            String::from("exec"),
-            ctid.to_string(),
-            String::from("--"),
-            String::from("ping"),
-            String::from("-c"),
-            String::from("1"),
-            String::from("-W"),
-            String::from("1"),
-            String::from(constants::DEFAULT_PING_TARGET),
-        ];
-        if runner.run_status_owned("pct", &args).is_ok() {
-            return Ok(());
-        }
-        std::thread::sleep(std::time::Duration::from_secs(2));
-    }
-    Ok(())
 }
 
 fn install_packages<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
