@@ -51,7 +51,8 @@ where
     *slot = Some(if line.is_empty() {
         default
     } else {
-        line.parse().map_err(|_| format!("invalid number: {line}"))?
+        line.parse()
+            .map_err(|_| format!("invalid number: {line}"))?
     });
     Ok(())
 }

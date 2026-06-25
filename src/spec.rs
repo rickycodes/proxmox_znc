@@ -149,7 +149,10 @@ impl Spec {
                 self.ctid.as_deref().unwrap_or("unavailable")
             ),
             format!("Hostname: {}", self.hostname),
-            format!("IRC server inside ZNC: {}:{}", self.irc_server, self.irc_port),
+            format!(
+                "IRC server inside ZNC: {}:{}",
+                self.irc_server, self.irc_port
+            ),
             format!("IRC nick: {}", self.nick),
             format!("ZNC user: {}", self.znc_user),
             format!(
@@ -227,20 +230,21 @@ fn download_alpine_template<R: CommandRunner>(
         let mut cols = line.split_whitespace();
         let _storage = cols.next();
         let name = cols.next().unwrap_or("");
-        if name.starts_with("alpine-")
-            && name.ends_with(&format!("_{}.tar.xz", template_arch))
-        {
+        if name.starts_with("alpine-") && name.ends_with(&format!("_{}.tar.xz", template_arch)) {
             matches.push(name.to_string());
         }
     }
 
     matches.sort();
-    let template_name = matches
-        .pop()
-        .ok_or_else(|| format!("could not find an Alpine template for architecture {template_arch}"))?;
+    let template_name = matches.pop().ok_or_else(|| {
+        format!("could not find an Alpine template for architecture {template_arch}")
+    })?;
 
     let existing = runner
-        .run_owned("pveam", &[String::from("list"), template_storage.to_string()])
+        .run_owned(
+            "pveam",
+            &[String::from("list"), template_storage.to_string()],
+        )
         .unwrap_or_default();
     let already_present = existing
         .lines()
@@ -416,10 +420,7 @@ fn ensure_znc_user<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), Strin
 }
 
 fn ensure_znc_dirs<R: CommandRunner>(runner: &R, ctid: &str) -> Result<(), String> {
-    let dirs = [
-        "/var/lib/znc",
-        "/var/lib/znc/configs",
-    ];
+    let dirs = ["/var/lib/znc", "/var/lib/znc/configs"];
     for dir in dirs {
         let args = vec![
             String::from("exec"),

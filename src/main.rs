@@ -3,8 +3,8 @@ mod cli;
 mod constants;
 mod process;
 mod prompt;
-mod storage;
 mod spec;
+mod storage;
 
 use cli::Config;
 use process::ShellRunner;

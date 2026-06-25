@@ -14,9 +14,7 @@ pub fn detect_storages<R: CommandRunner>(runner: &R) -> Result<Vec<String>, Stri
         .collect())
 }
 
-pub fn detect_template_storages<R: CommandRunner>(
-    runner: &R,
-) -> Result<Vec<String>, String> {
+pub fn detect_template_storages<R: CommandRunner>(runner: &R) -> Result<Vec<String>, String> {
     let storages = detect_storage_entries(runner)?;
     let mut candidates = Vec::new();
 
@@ -43,7 +41,10 @@ fn detect_storage_entries<R: CommandRunner>(runner: &R) -> Result<Vec<StorageEnt
             continue;
         }
 
-        if !storages.iter().any(|entry: &StorageEntry| entry.name == name) {
+        if !storages
+            .iter()
+            .any(|entry: &StorageEntry| entry.name == name)
+        {
             storages.push(StorageEntry {
                 name: name.to_string(),
                 kind: kind.to_string(),

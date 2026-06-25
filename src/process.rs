@@ -13,7 +13,12 @@ pub trait CommandRunner {
     ) -> Result<(), String>;
 }
 
-fn format_failure(program: &str, status: std::process::ExitStatus, stdout: &[u8], stderr: &[u8]) -> String {
+fn format_failure(
+    program: &str,
+    status: std::process::ExitStatus,
+    stdout: &[u8],
+    stderr: &[u8],
+) -> String {
     let stdout = String::from_utf8_lossy(stdout).trim().to_string();
     let stderr = String::from_utf8_lossy(stderr).trim().to_string();
 
@@ -113,7 +118,9 @@ impl CommandRunner for ShellRunner {
 
         if let Some(stdin) = child.stdin.as_mut() {
             use std::io::Write;
-            stdin.write_all(input.as_bytes()).map_err(|e| e.to_string())?;
+            stdin
+                .write_all(input.as_bytes())
+                .map_err(|e| e.to_string())?;
         }
 
         let output = child.wait_with_output().map_err(|e| e.to_string())?;
@@ -156,7 +163,10 @@ mod tests {
     #[test]
     fn run_owned_includes_stdout_and_stderr_on_failure() {
         let runner = ShellRunner;
-        let args = vec![String::from("-lc"), String::from("printf out; printf err >&2; exit 1")];
+        let args = vec![
+            String::from("-lc"),
+            String::from("printf out; printf err >&2; exit 1"),
+        ];
         let err = runner.run_owned("sh", &args).unwrap_err();
 
         assert!(err.contains("exited with status"));

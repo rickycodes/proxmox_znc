@@ -106,9 +106,15 @@ impl Config {
                 .iter()
                 .position(|s| s == constants::DEFAULT_STORAGE)
                 .unwrap_or(0);
-            prompt::choose("Root disk storage", default_idx, &storages, &mut self.storage)?;
+            prompt::choose(
+                "Root disk storage",
+                default_idx,
+                &storages,
+                &mut self.storage,
+            )?;
         }
-        let template_storages = crate::storage::detect_template_storages(runner).unwrap_or_default();
+        let template_storages =
+            crate::storage::detect_template_storages(runner).unwrap_or_default();
         if template_storages.is_empty() {
             prompt::text(
                 "Template storage",
@@ -163,7 +169,9 @@ impl Config {
         )?;
         let alt_default = format!(
             "{}_",
-            self.znc_user.as_deref().unwrap_or(constants::DEFAULT_ZNC_USER)
+            self.znc_user
+                .as_deref()
+                .unwrap_or(constants::DEFAULT_ZNC_USER)
         );
         prompt::text("IRC alternate nick", &alt_default, &mut self.alt_nick)?;
         prompt::text(

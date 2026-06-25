@@ -19,5 +19,4 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const GITHUB_BASE_URL: &str = "https://github.com";
 pub const GITHUB_USER: &str = "rickycodes";
 pub const GITHUB_REPO: &str = "proxmox_znc";
-pub const TEMPLATE_STORAGE_KINDS: &[&str] =
-    &["dir", "nfs", "cifs", "cephfs", "glusterfs", "zfs"];
+pub const TEMPLATE_STORAGE_KINDS: &[&str] = &["dir", "nfs", "cifs", "cephfs", "glusterfs", "zfs"];
