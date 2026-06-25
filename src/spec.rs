@@ -607,3 +607,30 @@ fn wait_for_container_ip<R: CommandRunner>(runner: &R, ctid: &str) -> Option<Str
     }
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn makeconf_answers_includes_password_twice() {
+        let answers = makeconf_answers(
+            "znc",
+            "secret",
+            "nick",
+            "nick_",
+            "real",
+            "libera",
+            "irc.libera.chat",
+            6697,
+        );
+
+        let lines: Vec<&str> = answers.lines().collect();
+        assert_eq!(lines[0], constants::DEFAULT_ZNC_LISTENER_PORT.to_string());
+        assert_eq!(lines[4], "znc");
+        assert_eq!(lines[5], "secret");
+        assert_eq!(lines[6], "secret");
+        assert_eq!(lines[7], "nick");
+        assert_eq!(lines[8], "nick_");
+    }
+}

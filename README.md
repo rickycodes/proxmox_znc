@@ -18,10 +18,10 @@ A small Proxmox host-side installer that creates an Alpine LXC and bootstraps a 
 - Downloads the latest Alpine LXC template for the host architecture.
 - Creates a small unprivileged container.
 - Installs `znc`, `znc-openrc`, and `ca-certificates`.
-- Generates a basic ZNC config wired to Libera by default via `znc --makeconf`.
+- Bootstraps a basic ZNC config wired to Libera by default.
 - Starts the service and enables it on boot.
 
-## Usage
+## Install
 
 Run it on the Proxmox host as `root`:
 
@@ -50,11 +50,10 @@ curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts
 
 ## Release Flow
 
-Create a tag like `v0.1.0` and push it:
+Update the version, create the release commit, tag it, and push it:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+./scripts/release.sh
 ```
 
 GitHub Actions will build:
@@ -63,10 +62,15 @@ GitHub Actions will build:
 
 and attach them to the release.
 
-Then the install wrapper can fetch the right binary from:
+## Verification
+
+Locally, the useful checks are:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash
+cargo check
+cargo test
+bash -n scripts/install.sh
+bash -n scripts/release.sh
 ```
 
 ## Install-Time Knobs

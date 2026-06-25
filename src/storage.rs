@@ -57,3 +57,62 @@ fn detect_storage_entries<R: CommandRunner>(runner: &R) -> Result<Vec<StorageEnt
 fn supports_templates(kind: &str) -> bool {
     constants::TEMPLATE_STORAGE_KINDS.contains(&kind)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::process::CommandRunner;
+
+    struct MockRunner {
+        output: String,
+    }
+
+    impl CommandRunner for MockRunner {
+        fn run(&self, program: &str, args: &[&str]) -> Result<String, String> {
+            if program == "pvesm" && args == ["status"] {
+                Ok(self.output.clone())
+            } else {
+                Err("unexpected command".into())
+            }
+        }
+
+        fn run_status(&self, _: &str, _: &[&str]) -> Result<(), String> {
+            Err("unexpected command".into())
+        }
+
+        fn run_owned(&self, _: &str, _: &[String]) -> Result<String, String> {
+            Err("unexpected command".into())
+        }
+
+        fn run_status_owned(&self, _: &str, _: &[String]) -> Result<(), String> {
+            Err("unexpected command".into())
+        }
+
+        fn run_status_owned_with_input(
+            &self,
+            _: &str,
+            _: &[String],
+            _: &str,
+        ) -> Result<(), String> {
+            Err("unexpected command".into())
+        }
+    }
+
+    #[test]
+    fn detects_template_capable_storages() {
+        let runner = MockRunner {
+            output: "Name Type Status Total Used Available\nlocal dir active 100 1 99\nlocal-lvm lvmthin active 200 2 198\nwd nfs active 300 3 297\n".into(),
+        };
+
+        let storages = detect_template_storages(&runner).unwrap();
+        assert_eq!(storages, vec!["local".to_string(), "wd".to_string()]);
+    }
+
+    #[test]
+    fn template_support_list_includes_expected_types() {
+        for kind in ["dir", "nfs", "cifs", "cephfs", "glusterfs", "zfs"] {
+            assert!(supports_templates(kind), "{kind} should support templates");
+        }
+        assert!(!supports_templates("lvmthin"));
+    }
+}
