@@ -54,10 +54,13 @@ curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts
 
 ## Release Flow
 
-Update the version, create the release commit, tag it, and push it:
+Update the version in `Cargo.toml`, commit the bump, tag the release, and push it:
 
 ```bash
-./scripts/release.sh
+git commit -am "bump"
+git tag v0.1.0-alpha.13
+git push origin main
+git push origin v0.1.0-alpha.13
 ```
 
 GitHub Actions will build:
@@ -74,7 +77,6 @@ Locally, the useful checks are:
 cargo check
 cargo test
 bash -n scripts/install.sh
-bash -n scripts/release.sh
 ```
 
 ## Install-Time Knobs
