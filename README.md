@@ -29,11 +29,15 @@ Run it on the Proxmox host as `root`:
 curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash
 ```
 
+![Installer banner](banner.png)
+
 Pass `--dry-run` to preview the planned install:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rickycodes/proxmox_znc/main/scripts/install.sh | bash -s -- --dry-run
 ```
+
+![Dry run output](dry-run.png)
 
 Or pass overrides:
 
