@@ -154,7 +154,7 @@ impl Config {
             constants::DEFAULT_CORES,
             &mut self.cores,
         )?;
-        let default_nick = env_opt("HOSTNAME").unwrap_or_else(|| constants::DEFAULT_NICK.into());
+        let default_nick = default_nick_from_hostname(env_opt("HOSTNAME").as_deref());
         prompt::text("IRC nick", &default_nick, &mut self.nick)?;
         prompt::text(
             "ZNC admin username",
@@ -235,4 +235,39 @@ fn parse_u32(s: &str) -> Result<u32, String> {
 
 fn parse_u16(s: &str) -> Result<u16, String> {
     s.parse().map_err(|_| format!("invalid number: {s}"))
+}
+
+fn default_nick_from_hostname(hostname: Option<&str>) -> String {
+    hostname.unwrap_or(constants::DEFAULT_NICK).to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parses_numeric_values() {
+        assert_eq!(parse_u32("42").unwrap(), 42);
+        assert_eq!(parse_u16("6697").unwrap(), 6697);
+    }
+
+    #[test]
+    fn rejects_bad_numbers() {
+        assert!(parse_u32("nope").is_err());
+        assert!(parse_u16("nope").is_err());
+    }
+
+    #[test]
+    fn next_value_requires_input() {
+        let mut values = vec![String::from("hello")].into_iter();
+        assert_eq!(next_value(&mut values, "--flag").unwrap(), "hello");
+        let err = next_value(&mut values, "--flag").unwrap_err();
+        assert!(err.contains("requires a value"));
+    }
+
+    #[test]
+    fn default_nick_prefers_hostname() {
+        assert_eq!(default_nick_from_hostname(Some("alpha")), "alpha");
+        assert_eq!(default_nick_from_hostname(None), constants::DEFAULT_NICK);
+    }
 }

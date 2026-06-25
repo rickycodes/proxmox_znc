@@ -129,3 +129,38 @@ impl CommandRunner for ShellRunner {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn run_returns_stdout_on_success() {
+        let runner = ShellRunner;
+        let output = runner.run("sh", &["-lc", "printf hello"]).unwrap();
+        assert_eq!(output, "hello");
+    }
+
+    #[test]
+    fn run_includes_stdout_and_stderr_on_failure() {
+        let runner = ShellRunner;
+        let err = runner
+            .run("sh", &["-lc", "printf out; printf err >&2; exit 1"])
+            .unwrap_err();
+
+        assert!(err.contains("exited with status"));
+        assert!(err.contains("stderr: err"));
+        assert!(err.contains("stdout: out"));
+    }
+
+    #[test]
+    fn run_owned_includes_stdout_and_stderr_on_failure() {
+        let runner = ShellRunner;
+        let args = vec![String::from("-lc"), String::from("printf out; printf err >&2; exit 1")];
+        let err = runner.run_owned("sh", &args).unwrap_err();
+
+        assert!(err.contains("exited with status"));
+        assert!(err.contains("stderr: err"));
+        assert!(err.contains("stdout: out"));
+    }
+}

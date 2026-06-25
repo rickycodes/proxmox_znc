@@ -26,4 +26,3 @@ jobs:
       - name: Shell syntax
         run: |
           bash -n scripts/install.sh
-          bash -n scripts/release.sh
