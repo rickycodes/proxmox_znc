@@ -1,83 +1,52 @@
 use crate::constants;
 use crate::prompt;
-use std::env;
+use clap::Parser;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Parser)]
+#[command(
+    name = "proxmox-znc",
+    about = "Interactive Proxmox LXC installer for a basic ZNC bounce"
+)]
 pub struct Config {
+    #[arg(long)]
     pub dry_run: bool,
+    #[arg(long, env = "HOSTNAME")]
     pub hostname: Option<String>,
+    #[arg(long, env = "STORAGE")]
     pub storage: Option<String>,
+    #[arg(long = "template-storage", env = "TEMPLATE_STORAGE")]
     pub template_storage: Option<String>,
+    #[arg(long, env = "BRIDGE")]
     pub bridge: Option<String>,
+    #[arg(long, env = "MEMORY")]
     pub memory: Option<u32>,
+    #[arg(long, env = "SWAP")]
     pub swap: Option<u32>,
+    #[arg(long, env = "DISK")]
     pub disk: Option<u32>,
+    #[arg(long, env = "CORES")]
     pub cores: Option<u32>,
+    #[arg(long = "znc-user", env = "ZNC_USER")]
     pub znc_user: Option<String>,
+    #[arg(long, env = "NICK")]
     pub nick: Option<String>,
+    #[arg(long = "alt-nick", env = "ALT_NICK")]
     pub alt_nick: Option<String>,
+    #[arg(long, env = "REALNAME")]
     pub realname: Option<String>,
+    #[arg(long, env = "PASSWORD")]
     pub password: Option<String>,
+    #[arg(long = "irc-server", env = "IRC_SERVER")]
     pub irc_server: Option<String>,
+    #[arg(long = "irc-port", env = "IRC_PORT")]
     pub irc_port: Option<u16>,
+    #[arg(long = "irc-network", env = "IRC_NETWORK")]
     pub irc_network: Option<String>,
 }
 
 impl Config {
     pub fn from_env_and_args() -> Result<Self, String> {
-        let mut cfg = Self {
-            dry_run: false,
-            hostname: env_opt("HOSTNAME"),
-            storage: env_opt("STORAGE"),
-            template_storage: env_opt("TEMPLATE_STORAGE"),
-            bridge: env_opt("BRIDGE"),
-            memory: env_parse("MEMORY"),
-            swap: env_parse("SWAP"),
-            disk: env_parse("DISK"),
-            cores: env_parse("CORES"),
-            znc_user: env_opt("ZNC_USER"),
-            nick: env_opt("NICK"),
-            alt_nick: env_opt("ALT_NICK"),
-            realname: env_opt("REALNAME"),
-            password: env_opt("PASSWORD"),
-            irc_server: env_opt("IRC_SERVER"),
-            irc_port: env_parse("IRC_PORT"),
-            irc_network: env_opt("IRC_NETWORK"),
-        };
-
-        let mut args = env::args().skip(1);
-        while let Some(arg) = args.next() {
-            match arg.as_str() {
-                "--dry-run" => cfg.dry_run = true,
-                "--hostname" => cfg.hostname = Some(next_value(&mut args, "--hostname")?),
-                "--storage" => cfg.storage = Some(next_value(&mut args, "--storage")?),
-                "--template-storage" => {
-                    cfg.template_storage = Some(next_value(&mut args, "--template-storage")?)
-                }
-                "--bridge" => cfg.bridge = Some(next_value(&mut args, "--bridge")?),
-                "--memory" => cfg.memory = Some(parse_u32(&next_value(&mut args, "--memory")?)?),
-                "--swap" => cfg.swap = Some(parse_u32(&next_value(&mut args, "--swap")?)?),
-                "--disk" => cfg.disk = Some(parse_u32(&next_value(&mut args, "--disk")?)?),
-                "--cores" => cfg.cores = Some(parse_u32(&next_value(&mut args, "--cores")?)?),
-                "--znc-user" => cfg.znc_user = Some(next_value(&mut args, "--znc-user")?),
-                "--nick" => cfg.nick = Some(next_value(&mut args, "--nick")?),
-                "--alt-nick" => cfg.alt_nick = Some(next_value(&mut args, "--alt-nick")?),
-                "--realname" => cfg.realname = Some(next_value(&mut args, "--realname")?),
-                "--password" => cfg.password = Some(next_value(&mut args, "--password")?),
-                "--irc-server" => cfg.irc_server = Some(next_value(&mut args, "--irc-server")?),
-                "--irc-port" => {
-                    cfg.irc_port = Some(parse_u16(&next_value(&mut args, "--irc-port")?)?)
-                }
-                "--irc-network" => cfg.irc_network = Some(next_value(&mut args, "--irc-network")?),
-                "--help" | "-h" => {
-                    print_usage();
-                    std::process::exit(0);
-                }
-                other => return Err(format!("unknown argument: {other}")),
-            }
-        }
-
-        Ok(cfg)
+        Self::try_parse().map_err(|e| e.to_string())
     }
 
     pub fn prompt_missing<R: crate::process::CommandRunner>(
@@ -160,7 +129,7 @@ impl Config {
             constants::DEFAULT_CORES,
             &mut self.cores,
         )?;
-        let default_nick = default_nick_from_hostname(env_opt("HOSTNAME").as_deref());
+        let default_nick = default_nick_from_hostname(self.hostname.as_deref());
         prompt::text("IRC nick", &default_nick, &mut self.nick)?;
         prompt::text(
             "ZNC admin username",
@@ -199,52 +168,6 @@ impl Config {
     }
 }
 
-fn print_usage() {
-    println!(
-        "Usage: proxmox-znc [options]\n\n\
-         Interactive Proxmox LXC installer for a basic ZNC bounce.\n\n\
-         Options:\n\
-           --dry-run\n\
-           --hostname NAME\n\
-           --storage NAME\n\
-           --template-storage NAME\n\
-           --bridge NAME\n\
-           --memory MB\n\
-           --swap MB\n\
-           --disk GB\n\
-           --cores N\n\
-           --znc-user NAME\n\
-           --nick NAME\n\
-           --alt-nick NAME\n\
-           --realname NAME\n\
-           --password PASS\n\
-           --irc-server HOST\n\
-           --irc-port PORT\n\
-           --irc-network NAME"
-    );
-}
-
-fn env_opt(key: &str) -> Option<String> {
-    env::var(key).ok().filter(|s| !s.is_empty())
-}
-
-fn env_parse<T: std::str::FromStr>(key: &str) -> Option<T> {
-    env::var(key).ok().and_then(|s| s.parse().ok())
-}
-
-fn next_value(args: &mut impl Iterator<Item = String>, flag: &str) -> Result<String, String> {
-    args.next()
-        .ok_or_else(|| format!("{flag} requires a value"))
-}
-
-fn parse_u32(s: &str) -> Result<u32, String> {
-    s.parse().map_err(|_| format!("invalid number: {s}"))
-}
-
-fn parse_u16(s: &str) -> Result<u16, String> {
-    s.parse().map_err(|_| format!("invalid number: {s}"))
-}
-
 fn default_nick_from_hostname(hostname: Option<&str>) -> String {
     hostname.unwrap_or(constants::DEFAULT_NICK).to_string()
 }
@@ -252,26 +175,6 @@ fn default_nick_from_hostname(hostname: Option<&str>) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn parses_numeric_values() {
-        assert_eq!(parse_u32("42").unwrap(), 42);
-        assert_eq!(parse_u16("6697").unwrap(), 6697);
-    }
-
-    #[test]
-    fn rejects_bad_numbers() {
-        assert!(parse_u32("nope").is_err());
-        assert!(parse_u16("nope").is_err());
-    }
-
-    #[test]
-    fn next_value_requires_input() {
-        let mut values = vec![String::from("hello")].into_iter();
-        assert_eq!(next_value(&mut values, "--flag").unwrap(), "hello");
-        let err = next_value(&mut values, "--flag").unwrap_err();
-        assert!(err.contains("requires a value"));
-    }
 
     #[test]
     fn default_nick_prefers_hostname() {
